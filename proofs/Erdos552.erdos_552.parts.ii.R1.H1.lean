@@ -1,5 +1,6 @@
 import OMAReductions.R_Erdos552_erdos_552_parts_ii_R1
 import Mathlib
+section
 
 /-!
 # Quadrilateral–star Ramsey numbers at finite-field orders
@@ -5368,6 +5369,2687 @@ end Erdos552Trace51
 theorem Deldor14.Star.Waddle51.ramsey_star_51 : Deldor14.Star.number 51 = 59 :=
   Deldor14.Star.Waddle51.star_51_of_classification Deldor14.Star.Cyclo51.classify Erdos552Trace51.trace_obstruction
 
-theorem OMA.solution : OMA.R_Erdos552_erdos_552_parts_ii_R1.H1 := by
-  intro p hp
-  exact Deldor14.Star.prime_square hp
+end
+
+/- The Ramsey number of the four-cycle versus a star on 963 leaves.
+The lower bound uses an affine polarity over the field of order 32. For
+the upper bound, a 995-vertex counterexample would have degree 32 and
+a 2-regular deficiency graph. Following the cycle-spectrum method in
+Zach Waddle's preprint for 51 leaves, the following certificates check the
+new parameters independently. For orders 3 through 995 a symmetric integer
+polynomial vanishes on a primitive root and gives a monic real factor of
+degree φ(k)/2. In each case its value at 31 is a nonsquare. The two remaining
+orders give 29 and 33. Consequently the nonprincipal eigenvalues have even
+minimal polynomials, incompatible with the trace of the adjacency matrix.
+All table identities and nonsquare claims are checked by the Lean kernel.
+Provenance for the 51-leaf method:
+https://github.com/zach7036/c4-star-ramsey/blob/86a1c5055eea5e3891b2eeaea6c7ee1b3977bd33/R_C4_K1_51.md .
+For related finite-field bounds see Luis Boza, https://arxiv.org/abs/2409.12770 .
+This application does not assert priority in the mathematical literature. -/
+section
+namespace Deldor14.Star.Shell963
+def zipSum : List ℤ → List ℤ → List ℤ
+  | [],b => b
+  | a,[] => a
+  | a::as,b::bs => (a+b)::zipSum as bs
+def shell (c:ℤ) : List ℤ → List ℤ
+  | [] => [c]
+  | a::as => a::(shell c as ++ [a])
+
+def bin (j:ℕ) (l:List ℤ) := zipSum (List.replicate j 0 ++ l) (l.map ((-1)*·))
+def bins (exps:List ℕ) (p:List ℤ) := exps.foldl (fun q e => bin e q) p
+
+def foldBlocks (k:ℕ) : ℕ → List ℤ → List ℤ
+  | 0,l => l
+  | steps+1,l => if k≤l.length then zipSum (l.take k) (foldBlocks k steps (l.drop k)) else l
+
+def unpack : ℕ → ℕ → List ℤ
+  | 0,_ => []
+  | n+1,b => (((b%16:ℕ):ℤ)-7) :: unpack n (b/16)
+
+structure Row where
+  depth : ℕ
+  bits : ℕ
+  center : ℤ
+  exps : List ℕ
+deriving Inhabited
+
+def Row.half (r:Row) := unpack r.depth r.bits
+
+/-- The pair stores successive Vieta values with the value of the polynomial. -/
+def fast (t c:ℤ) : List ℤ → ℤ × ℤ × ℤ
+  | [] => (2,t,c)
+  | a::as => let (v,w,s) := fast t c as; (w,t*w-v,a*w+s)
+
+def Row.ok (r:Row) (n:ℕ) : Bool :=
+  decide (2*(r.depth+1)=n.totient) &&
+  r.exps.all (fun e => decide (0<e ∧ e<n)) &&
+  (foldBlocks n 4 (bins r.exps ((1::r.half) ++ r.center :: (1::r.half).reverse))).all (fun c => c==0) &&
+  decide (¬IsSquare ((fast 31 r.center (1::r.half)).2.2))
+
+end Deldor14.Star.Shell963
+
+end
+
+section
+/- A Chebyshev-basis polynomial is encoded by its coefficients from the
+highest shell down to the central constant. The symmetric Laurent identity
+relates evaluation of this polynomial to evaluation at a root of unity. -/
+namespace Deldor14.Star.Shell963
+open Polynomial Cyclo51
+
+def cheb {R : Type*} [CommRing R] (x:R) : ℕ → R
+  | 0 => 2
+  | 1 => x
+  | n+2 => x*cheb x (n+1)-cheb x n
+
+def ces {R : Type*} [CommRing R] (x:R) (c:ℤ) : List ℤ → R
+  | [] => c
+  | a::as => (a:R)*cheb x (as.length+1)+ces x c as
+
+theorem shell_length (c:ℤ) (l:List ℤ) : (shell c l).length=2*l.length+1 := by
+  induction l with
+  | nil => rfl
+  | cons a as ih => simp [shell,ih]; omega
+
+theorem val_append {R : Type*} [CommRing R] (x:R) (a b:List ℤ) :
+    Cyclo51.val x (a++b)=Cyclo51.val x a+x^a.length*Cyclo51.val x b := by
+  induction a with
+  | nil => simp [Cyclo51.val]
+  | cons c as ih => simp only [List.cons_append,List.length_cons,Cyclo51.val,ih,pow_succ];ring
+
+theorem cheb_vs {R : Type*} [CommRing R] (x:R) (n:ℕ) : cheb x n=Cyclo51.val x (vs n) := by
+  induction n using Nat.twoStepInduction with
+  | zero => norm_num [cheb,vs,Cyclo51.val]
+  | one => norm_num [cheb,vs,Cyclo51.val]
+  | more n h h' => rw [cheb,h,h',val_vs]
+
+theorem shell_eval (z:ℂ) (hz:z≠0) (c:ℤ) (l:List ℤ) :
+    Cyclo51.val z (shell c l) = z^l.length*ces (z+z⁻¹) c l := by
+  induction l with
+  | nil => simp [shell,Cyclo51.val,ces]
+  | cons a as ih =>
+    simp only [shell,Cyclo51.val,List.length_cons,ces,val_append,shell_length,ih,cheb_vs,vs_primitive z hz]
+    simp only [mul_zero,add_zero,inv_pow]
+    have h1 : z^as.length ≠ 0 := pow_ne_zero _ hz
+    simp only [show 2*as.length+1=as.length+as.length+1 by omega,pow_succ,pow_add]
+    field_simp
+    ring
+
+theorem cheb_monic_degree (n:ℕ) :
+    (cheb (X:ℚ[X]) (n+1)).Monic ∧ (cheb (X:ℚ[X]) (n+1)).natDegree=n+1 := by
+  induction n using Nat.twoStepInduction with
+  | zero => simp [cheb]
+  | one =>
+    change (X*(X:ℚ[X])-2).Monic ∧ (X*(X:ℚ[X])-2).natDegree=2
+    have hd : (2:ℚ[X]).degree < (X*(X:ℚ[X])).degree := by
+      refine (degree_natCast_le (R:=ℚ) 2).trans_lt ?_
+      norm_num [degree_mul]
+    exact ⟨(monic_X.mul monic_X).sub_of_left hd,by rw [sub_eq_add_neg,natDegree_add_eq_left_of_degree_lt (by simpa using hd)]; simp⟩
+  | more n h h' =>
+    have deg : (X*cheb (X:ℚ[X]) (n+2)).natDegree=n+3 := by rw [natDegree_X_mul h'.1.ne_zero,h'.2]
+    have lt : (cheb (X:ℚ[X]) (n+1)).degree < (X*cheb (X:ℚ[X]) (n+2)).degree := by
+      rw [degree_eq_natDegree h.1.ne_zero,degree_eq_natDegree (mul_ne_zero X_ne_zero h'.1.ne_zero),h.2,deg]
+      exact_mod_cast (by omega : n+1<n+3)
+    change (X*cheb (X:ℚ[X]) (n+2) - cheb (X:ℚ[X]) (n+1)).Monic ∧ _
+    exact ⟨(monic_X.mul h'.1).sub_of_left lt,by change (X*cheb (X:ℚ[X]) (n+2)-cheb X (n+1)).natDegree=n+3; rw [sub_eq_add_neg,natDegree_add_eq_left_of_degree_lt (by simpa using lt),deg]⟩
+
+theorem ces_degree (c:ℤ) (l:List ℤ) : (ces (X:ℚ[X]) c l).natDegree≤l.length := by
+  induction l with
+  | nil => simp [ces]
+  | cons a as ih =>
+    apply natDegree_add_le_of_degree_le _ (ih.trans (Nat.le_succ _))
+    have ha : (a:ℚ[X])=C (a:ℚ) := by simp
+    rw [ha]
+    exact (natDegree_C_mul_le ..).trans_eq (cheb_monic_degree _).2
+
+noncomputable def P (c:ℤ) (a:List ℤ) : ℚ[X] := ces X c (1::a)
+
+theorem monic_degree (c:ℤ) (a:List ℤ) : (P c a).Monic ∧ (P c a).natDegree=a.length+1 := by
+  have top := cheb_monic_degree a.length
+  have small : (ces (X:ℚ[X]) c a).degree < (cheb (X:ℚ[X]) (a.length+1)).degree := by
+    refine (degree_le_natDegree).trans_lt ?_
+    rw [degree_eq_natDegree top.1.ne_zero,top.2]
+    exact_mod_cast Nat.lt_succ_of_le (ces_degree c a)
+  simp only [P,ces,Int.cast_one,one_mul]
+  exact ⟨top.1.add_of_left small,(natDegree_add_eq_left_of_degree_lt small).trans top.2⟩
+
+theorem map_cheb {R : Type*} [Field R] [Algebra ℚ R] (x:R) (n:ℕ) :
+    aeval x (cheb (X:ℚ[X]) n)=cheb x n := by
+  induction n using Nat.twoStepInduction with
+  | zero => change (aeval x) ((2:ℕ):ℚ[X])=((2:ℕ):R); rw [map_natCast]
+  | one => simp [cheb]
+  | more n h h' => simp only [cheb,map_sub,map_mul,aeval_X,h,h']
+
+theorem map_ces {R : Type*} [Field R] [Algebra ℚ R] (x:R) (c:ℤ) (l:List ℤ) :
+    aeval x (ces (X:ℚ[X]) c l)=ces x c l := by
+  induction l with
+  | nil => simp [ces]
+  | cons a as ih => simp only [ces,map_add,map_mul,map_intCast,map_cheb,ih]
+
+end Deldor14.Star.Shell963
+
+end
+
+section
+namespace Deldor14.Star.Shell963
+open Cyclo51
+
+theorem zipSum_eq (a b : List ℤ) : zipSum a b=plus a b := by
+  induction a generalizing b with
+  | nil => rfl
+  | cons c as ih => cases b <;> simp [zipSum,plus,ih]
+
+theorem zero_val {R : Type*} [CommRing R] (x:R) (l:List ℤ) (all : ∀c∈l,c=0) : Cyclo51.val x l=0 := by
+  induction l with
+  | nil => rfl
+  | cons a as ih =>
+    rw [Cyclo51.val, all a (by simp),ih (fun b hb => all b (by simp [hb]))]
+    simp
+
+theorem val_bin (x:ℂ) (j:ℕ) (l:List ℤ) : Cyclo51.val x (bin j l)=(x^j-1)*Cyclo51.val x l := by
+  simp only [bin,zipSum_eq,val_plus,val_append,val_scale,List.length_replicate]
+  rw [zero_val x _ (fun c h => (List.mem_replicate.mp h).2)]
+  push_cast;ring
+
+theorem val_fold (x:ℂ) {k:ℕ} (rk:x^k=1) (s:ℕ) (l:List ℤ) :
+    Cyclo51.val x (foldBlocks k s l)=Cyclo51.val x l := by
+  induction s generalizing l with
+  | zero => rfl
+  | succ s ih =>
+    simp only [foldBlocks]
+    split
+    next h =>
+      rw [zipSum_eq,val_plus,ih]
+      conv_rhs => rw [←List.take_append_drop k l, val_append]
+      simp [List.length_take,h,rk]
+    next => rfl
+
+theorem root_of_certificate {k:ℕ} {x:ℂ} (prim:IsPrimitiveRoot x k) (p:List ℤ)
+    (es:List ℕ) (bound:∀e∈es,0<e ∧ e<k) (steps:ℕ)
+    (all:∀c∈foldBlocks k steps (bins es p),c=0) : Cyclo51.val x p=0 := by
+  have hzero := zero_val x _ all
+  rw [val_fold x prim.pow_eq_one] at hzero
+  clear all
+  induction es generalizing p with
+  | nil => exact hzero
+  | cons e es ih =>
+    have h := ih (bin e p) (fun j hj => bound j (List.mem_cons_of_mem _ hj)) hzero
+    rw [val_bin] at h
+    have he := bound e List.mem_cons_self
+    exact (mul_eq_zero.mp h).resolve_left (sub_ne_zero.mpr (prim.pow_ne_one_of_pos_of_lt he.1.ne' he.2))
+
+theorem unpack_length (n b:ℕ) : (unpack n b).length=n := by
+  induction n generalizing b with
+  | zero => rfl
+  | succ n ih => simp [unpack,ih]
+
+theorem fast_ok (t c:ℤ) (l:List ℤ) : fast t c l=(cheb t l.length,cheb t (l.length+1),ces t c l) := by
+  induction l with
+  | nil => rfl
+  | cons a as ih => simp only [fast,ih,List.length_cons,cheb,ces,Int.cast_id]
+
+theorem shell_fast (c:ℤ) (l:List ℤ) : shell c l = l ++ c::l.reverse := by
+  induction l with
+  | nil => rfl
+  | cons a as ih => simp [shell,ih,List.append_assoc]
+
+theorem row_valid (r:Row) {n:ℕ} (pos:0<n) (h:r.ok n=true) :
+    2*(r.half.length+1)=n.totient ∧
+    (∀z:ℂ, IsPrimitiveRoot z n → ces (z+z⁻¹) r.center (1::r.half)=0) ∧
+    ¬IsSquare (ces (31:ℤ) r.center (1::r.half)) := by
+  simp [Row.ok,Bool.and_eq_true,List.all_eq_true] at h
+  refine ⟨by simpa [Row.half,unpack_length] using h.1.1.1,?_,?_⟩
+  · intro z prim
+    have eq := root_of_certificate prim (shell r.center (1::r.half)) r.exps h.1.1.2 4 (by simpa [shell_fast] using h.1.2)
+    rw [shell_eval z (prim.ne_zero pos.ne')] at eq
+    exact (mul_eq_zero.mp eq).resolve_left (pow_ne_zero _ (prim.ne_zero pos.ne'))
+  · simpa [fast_ok] using h.2
+
+end Deldor14.Star.Shell963
+
+end
+
+section
+/- Real eigenvalues of an adjacency matrix with a 2-regular deficiency graph. -/
+namespace Deldor14.Star.Star963
+open Waddle51 Finset Matrix Unitary SimpleGraph
+
+private theorem lower_diag {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] (reg : ∀ x, G.degree x = 2) (U : Matrix.unitaryGroup V ℝ) (i : V) :
+    -2 ≤ (conjStarAlgAut ℝ _ (star U) (G.adjMatrix ℝ)) i i := by
+  let e := conjStarAlgAut ℝ _ (star U)
+  have deg : G.degMatrix ℝ = (2:ℝ) • (1:Matrix V V ℝ) := by
+    ext i j
+    simp [degMatrix,Matrix.smul_apply,Matrix.one_apply,diagonal_apply,reg]
+  have plus := (Waddle39.signless_pos G).mul_mul_conjTranspose_same
+    ((star U : Matrix.unitaryGroup V ℝ) : Matrix V V ℝ)
+  have p : 0 ≤ (e (G.degMatrix ℝ + G.adjMatrix ℝ)) i i := plus.diag_nonneg
+  rw [deg,map_add,map_smul,map_one,Matrix.add_apply,Matrix.smul_apply,Matrix.one_apply_eq,
+    smul_eq_mul,mul_one] at p
+  change -2 ≤ e (G.adjMatrix ℝ) i i
+  linarith
+
+private theorem transfer {V : Type*} [Fintype V] [DecidableEq V]
+    (A J : Matrix V V ℝ) (D : SimpleGraph V) [DecidableRel D.Adj] (x : V → ℝ)
+    (θ : ℝ) (eig : A *ᵥ x = θ • x) (off : θ ≠ 32) (rightJ : J*A = (32:ℝ) • J)
+    (square : A^2 = (31:ℝ) • 1 + J - D.adjMatrix ℝ) :
+    D.adjMatrix ℝ *ᵥ x = (31-θ^2) • x := by
+  have jr := congrArg (fun B : Matrix V V ℝ => B *ᵥ x) rightJ
+  change (J*A) *ᵥ x = ((32:ℝ) • J) *ᵥ x at jr
+  rw [←mulVec_mulVec,eig,mulVec_smul,smul_mulVec] at jr
+  have jzero : J *ᵥ x = 0 := by
+    ext i
+    have eq := congrFun jr i
+    change θ * (J *ᵥ x) i = 32 * (J *ᵥ x) i at eq
+    have v : (θ-32) * (J *ᵥ x) i = 0 := by linear_combination eq
+    exact (mul_eq_zero.mp v).resolve_left (sub_ne_zero.mpr off)
+  have aq := congrArg (fun B : Matrix V V ℝ => B *ᵥ x) square
+  change (A^2) *ᵥ x = ((31:ℝ) • 1 + J - D.adjMatrix ℝ) *ᵥ x at aq
+  rw [sq,←mulVec_mulVec,eig,mulVec_smul,eig,sub_mulVec,add_mulVec,smul_mulVec,one_mulVec,jzero,add_zero] at aq
+  ext i
+  have entry := congrFun aq i
+  change θ*(θ*x i) = 31*x i - (D.adjMatrix ℝ *ᵥ x) i at entry
+  change (D.adjMatrix ℝ *ᵥ x) i = (31-θ^2)*x i
+  linear_combination entry
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 3000000 in
+theorem spectral_rows (A J : Matrix (Fin 995) (Fin 995) ℝ) (D : SimpleGraph (Fin 995))
+    [DecidableRel D.Adj] (reg : ∀ i, D.degree i = 2) (herm : A.IsHermitian)
+    (square : A^2 = (31:ℝ) • 1 + J - D.adjMatrix ℝ)
+    (rightJ : J*A = (32:ℝ) • J) (trJ : J.trace = 995) :
+    ∃ t : Fin 995, herm.eigenvalues t = 32 ∧ (∀ i, herm.eigenvalues i = 32 → i = t) ∧
+      ∀ i, herm.eigenvalues i ≠ 32 → ∃ d : ℕ, 0 < d ∧ d ≤ 995 ∧
+        vieta (31 - (herm.eigenvalues i)^2) d = 2 := by
+  classical
+  let f := herm.eigenvalues
+  let e := conjStarAlgAut ℝ _ (star herm.eigenvectorUnitary)
+  let j (i : Fin 995) := (e J) i i
+  have diagA : e A = diagonal f := by
+    simpa [e,f,Function.comp_def] using herm.conjStarAlgAut_star_eigenvectorUnitary
+  have traceConj (B : Matrix (Fin 995) (Fin 995) ℝ) : (e B).trace = B.trace := by
+    dsimp only [e]
+    rw [conjStarAlgAut_apply,trace_mul_cycle,coe_star_mul_self,one_mul]
+  have jSum : ∑ i, j i = 995 := (traceConj J).trans trJ
+  have relation (i : Fin 995) : j i * (f i - 32) = 0 := by
+    have eq := congrArg e rightJ
+    rw [map_mul,map_smul,diagA] at eq
+    have entry := congrArg (fun B : Matrix (Fin 995) (Fin 995) ℝ => B i i) eq
+    simp only [mul_diagonal,Matrix.smul_apply,smul_eq_mul] at entry
+    dsimp only [j]
+    linear_combination entry
+  have off (i : Fin 995) (h : f i ≠ 32) : j i = 0 :=
+    (mul_eq_zero.mp (relation i)).resolve_right (sub_ne_zero.mpr h)
+  have near (i : Fin 995) (h : f i = 32) : 991 ≤ j i := by
+    have eq := congrArg e square
+    rw [map_pow,map_sub,map_add,map_smul,map_one,diagA,diagonal_pow] at eq
+    have entry := congrArg (fun B : Matrix (Fin 995) (Fin 995) ℝ => B i i) eq
+    simp only [diagonal_apply_eq,Pi.pow_apply,h,Matrix.sub_apply,Matrix.add_apply,Matrix.smul_apply,
+      Matrix.one_apply_eq,smul_eq_mul,mul_one] at entry
+    have lo : -2 ≤ (e (D.adjMatrix ℝ)) i i := lower_diag D reg herm.eigenvectorUnitary i
+    dsimp only [j]
+    linarith only [lo,entry]
+  let top := univ.filter (fun i => f i = 32)
+  have row (i : Fin 995) : (if f i = 32 then (991:ℝ) else 0) ≤ j i := by
+    split
+    · exact near i ‹_›
+    · rw [off i ‹_›]
+  have upper := Finset.sum_le_sum (s:=univ) (fun i _ => row i)
+  rw [jSum] at upper
+  have tally : (top.card:ℝ)*991 ≤ 995 := by simpa [top,Finset.sum_ite] using upper
+  have card_le : top.card ≤ 1 := by
+    by_contra! h
+    have hn : (2:ℝ) ≤ top.card := by exact_mod_cast h
+    linarith
+  have nonempty : top.Nonempty := by
+    by_contra! empty
+    have zero (i : Fin 995) : j i = 0 := by
+      apply off i
+      intro hi
+      have h : i ∈ top := mem_filter.mpr ⟨mem_univ _,hi⟩
+      simp [empty] at h
+    simp [zero] at jSum
+  obtain ⟨t,ht⟩ := Finset.card_eq_one.mp (le_antisymm card_le (Finset.card_pos.mpr nonempty))
+  refine ⟨t,(mem_filter.mp (show t ∈ top by rw [ht]; simp)).2,?_,?_⟩
+  · intro i fi
+    have m : i ∈ top := mem_filter.mpr ⟨mem_univ _,fi⟩
+    rwa [ht,mem_singleton] at m
+  · intro i fi
+    let x := (herm.eigenvectorBasis i : Fin 995 → ℝ)
+    have nonzero : x ≠ 0 := (WithLp.ofLp_eq_zero 2).ne.2 (herm.eigenvectorBasis.orthonormal.ne_zero i)
+    have eig := transfer A J D x (herm.eigenvalues i) (herm.mulVec_eigenvectorBasis i) fi rightJ square
+    simpa using cycle_spectrum D reg _ x nonzero eig
+
+end Deldor14.Star.Star963
+
+/- Deflation of the unique principal eigenvalue over the rationals. -/
+namespace Deldor14.Star.Star963
+open Waddle51 Matrix Finset Polynomial SimpleGraph
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 3000000 in
+theorem rational_factor (A J : Matrix (Fin 995) (Fin 995) ℝ) (D : SimpleGraph (Fin 995))
+    [DecidableRel D.Adj] (reg : ∀ i, D.degree i = 2) (herm : A.IsHermitian)
+    (square : A^2 = (31:ℝ) • 1 + J - D.adjMatrix ℝ)
+    (rightJ : J*A = (32:ℝ) • J) (trJ : J.trace = 995)
+    (F : ℚ[X]) (monic : F.Monic) (rational : F.map (algebraMap ℚ ℝ) = A.charpoly) :
+    ∃ Q : ℚ[X], Q.Monic ∧ F = (X - C 32)*Q ∧ Q.eval 32 ≠ 0 ∧
+      (F.map (algebraMap ℚ ℝ)).Splits ∧
+      ∀ θ : ℝ, (F.map (algebraMap ℚ ℝ)).IsRoot θ → θ ≠ 32 →
+        ∃ d : ℕ, 0 < d ∧ d ≤ 995 ∧ vieta (31-θ^2) d = 2 := by
+  classical
+  obtain ⟨t,ft,unique,other⟩ := spectral_rows A J D reg herm square rightJ trJ
+  let f := herm.eigenvalues
+  let S := univ.erase t
+  let g (i : Fin 995) := (X - C (f i) : ℝ[X])
+  have full : F.map (algebraMap ℚ ℝ) = ∏ i, g i := by
+    rw [rational]
+    simpa [g,f] using herm.charpoly_eq
+  have fact : F.map (algebraMap ℚ ℝ) = (X-C 32) * ∏ i ∈ S, g i := by
+    rw [full,←Finset.mul_prod_erase univ g (mem_univ t)]
+    simp only [g, f, ft, S]
+  have root8 : F.IsRoot (32:ℚ) := by
+    have real8 : (F.map (algebraMap ℚ ℝ)).eval (32:ℝ) = 0 := by rw [fact]; simp
+    apply (algebraMap ℚ ℝ).injective
+    change algebraMap ℚ ℝ (F.eval 32) = _
+    rw [map_zero,←eval_map_apply]
+    simpa using real8
+  obtain ⟨Q,eq⟩ := Polynomial.dvd_iff_isRoot.mpr root8
+  have small : Q.map (algebraMap ℚ ℝ) = ∏ i ∈ S, g i := by
+    apply mul_left_cancel₀ (X_sub_C_ne_zero (32:ℝ))
+    conv_lhs => rw [show (X-C 32 : ℝ[X]) =
+      (X-C 32 : ℚ[X]).map (algebraMap ℚ ℝ) by simp]
+    rw [←Polynomial.map_mul,←eq,fact]
+  refine ⟨Q,(monic_X_sub_C (32:ℚ)).of_mul_monic_left (eq ▸ monic),eq,?_,rational ▸ herm.splits_charpoly,?_⟩
+  · intro h
+    have hz := congrArg (algebraMap ℚ ℝ) h
+    rw [map_zero,←eval_map_apply] at hz
+    have zero : (Q.map (algebraMap ℚ ℝ)).eval (32:ℝ) = 0 := by simpa using hz
+    rw [small,eval_prod,Finset.prod_eq_zero_iff] at zero
+    obtain ⟨i,hi,vanish⟩ := zero
+    have fi : f i = 32 := by
+      simp only [g,eval_sub,eval_X,eval_C] at vanish
+      linarith
+    exact (mem_erase.mp hi).1 (unique i fi)
+  · intro θ root ne
+    rw [full,IsRoot,eval_prod,Finset.prod_eq_zero_iff] at root
+    obtain ⟨i,_,hi⟩ := root
+    have eqf : θ = f i := by exact sub_eq_zero.mp (by simpa [g] using hi)
+    subst θ
+    exact other i ne
+
+end Deldor14.Star.Star963
+
+/- Transfer the 995-vertex obstruction and Waddle's verified 58-vertex graph
+to the Ramsey number for the star with 963 leaves. -/
+namespace Deldor14.Star.Star963
+open Waddle51 Finset SimpleGraph Matrix Polynomial ExcessOne OMA.ChenStar
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 3000000 in
+theorem star_963_of_classification
+    (cyclo : ∀ (θ : ℝ) {d : ℕ}, 0 < d → d ≤ 995 → vieta (31-θ^2) d = 2 →
+      θ = 3 ∨ θ = -3 ∨ (minpoly ℚ θ).comp (-X) = minpoly ℚ θ)
+    (obstruction : ∀ {F Q : ℚ[X]}, Q.Monic → F = (X-C 32)*Q → Q.eval 32 ≠ 0 →
+      (F.map (algebraMap ℚ ℝ)).Splits →
+      (∀ θ : ℝ, (F.map (algebraMap ℚ ℝ)).IsRoot θ → θ ≠ 32 →
+        θ = 3 ∨ θ = -3 ∨ (minpoly ℚ θ).comp (-X) = minpoly ℚ θ) → F.nextCoeff ≠ 0) :
+    Deldor14.Star.number 963 = 995 := by
+  classical
+  apply Nat.le_antisymm _ (by simpa using UnitsRows.power_two_lower (m:=5) (s:=2) (by decide) (by decide))
+  apply Nat.sInf_le
+  intro G
+  by_cases red : (cycleGraph 4).IsContained G
+  · exact Or.inl red
+  right
+  by_contra nonstar
+  have minimum (v) : 32 ≤ G.degree v := by
+    have l : Gᶜ.degree v < 963 :=
+      lt_of_not_ge (fun ge => nonstar (star_isContained_of_le_degree Gᶜ ge))
+    rw [degree_compl,Fintype.card_fin] at l
+    omega
+  have reg := Deficiency.regular_of_bounds G red minimum (by decide)
+  let D := Deficiency.graph G
+  have dr (v) : D.degree v = 2 := Deficiency.degree G red (d:=32) (e:=2) (by decide) reg v
+  let A := G.adjMatrix ℝ
+  let J := ones (Fin 995) ℝ
+  have aa : A^2 = (31:ℝ) • 1 + J - D.adjMatrix ℝ := by
+    simpa only [Nat.cast_ofNat,show (32:ℝ)-1=31 by norm_num] using Deficiency.adj_square G red reg
+  have rightJ : J*A = (32:ℝ) • J := by
+    ext i j
+    change (ones (Fin 995) ℝ * G.adjMatrix ℝ) i j = _
+    rw [mul_adjMatrix_apply]
+    simp [J,ones,reg]
+  have trJ : J.trace = 995 := by simp [J,ones,Matrix.trace,Matrix.diag]
+  have herm : A.IsHermitian := by
+    change Aᴴ = A
+    rw [conjTranspose_eq_transpose_of_trivial]
+    exact G.isSymm_adjMatrix
+  let F := (G.adjMatrix ℚ).charpoly
+  have rational : F.map (algebraMap ℚ ℝ) = A.charpoly := by
+    dsimp only [F]
+    rw [←Matrix.charpoly_map]
+    apply congrArg Matrix.charpoly
+    ext i j
+    by_cases h : G.Adj i j <;> simp [A,Matrix.map_apply,adjMatrix_apply,h]
+  obtain ⟨Q,hm,eq,h8,split,roots⟩ := rational_factor A J D dr herm aa rightJ trJ F
+    (Matrix.charpoly_monic _) rational
+  have no := obstruction hm eq h8 split (fun θ hθ ne => by
+    obtain ⟨d,pos,le,h⟩ := roots θ hθ ne
+    exact cyclo θ pos le h)
+  apply no
+  have ht := Matrix.trace_eq_neg_charpoly_nextCoeff (G.adjMatrix ℚ)
+  rw [G.trace_adjMatrix ℚ] at ht
+  dsimp only [F]
+  linarith
+
+end Deldor14.Star.Star963
+
+
+namespace Deldor14.Star.Star963
+open Polynomial Erdos552Trace51
+theorem trace_obstruction {F Q : ℚ[X]} (hm : Q.Monic)
+    (eq : F = (X - C 32) * Q) (h8 : Q.eval 32 ≠ 0)
+    (splits : (F.map (algebraMap ℚ ℝ)).Splits)
+    (classify : ∀ θ : ℝ, (F.map (algebraMap ℚ ℝ)).IsRoot θ → θ ≠ 32 →
+      θ = 3 ∨ θ = -3 ∨ (minpoly ℚ θ).comp (-X) = minpoly ℚ θ) :
+    F.nextCoeff ≠ 0 := by
+  have hF : F.Monic := eq ▸ (monic_X_sub_C _).mul hm
+  have cls (p : ℚ[X]) (hi : Irreducible p) (hp : p.Monic) (hd : p ∣ Q) :
+      p = X - C 3 ∨ p = X - C (-3) ∨ p.comp (-X) = p := by
+    have hdF : p ∣ F := eq ▸ dvd_mul_of_dvd_right hd _
+    let ι := algebraMap ℚ ℝ
+    have hmF : p.map ι ∣ F.map ι := Polynomial.map_dvd ι hdF
+    have hs : (p.map ι).Splits := splits.of_dvd (hF.map ι).ne_zero hmF
+    have hn : (p.map ι).natDegree ≠ 0 := by
+      rw [hp.natDegree_map ι]
+      exact hi.natDegree_pos.ne'
+    obtain ⟨θ,hθ⟩ := hs.exists_eval_eq_zero (degree_ne_of_natDegree_ne hn)
+    have hr : (p.map ι).IsRoot θ := hθ
+    have hnr : θ ≠ 32 := by
+      rintro rfl
+      have H := hr.dvd (Polynomial.map_dvd ι hd)
+      have h : (Q.map ι).eval (ι 32) = 0 := by simpa [ι] using H
+      rw [eval_map_apply] at h
+      exact h8 (ι.injective (by simpa using h))
+    have hmnp : p = minpoly ℚ θ :=
+      minpoly.eq_of_irreducible_of_monic hi (by simpa [aeval_def, eval_map, ι] using hθ) hp
+    rcases classify θ (hr.dvd hmF) hnr with rfl | rfl | he
+    · left
+      apply hmnp.trans
+      simpa [ι] using minpoly.eq_X_sub_C_of_algebraMap_inj (B := ℝ) (3 : ℚ) ι.injective
+    · right; left
+      apply hmnp.trans
+      simpa [ι] using minpoly.eq_X_sub_C_of_algebraMap_inj (B := ℝ) (-3 : ℚ) ι.injective
+    · exact Or.inr (Or.inr (hmnp ▸ he))
+  obtain ⟨z,hz⟩ := three_divides_nextCoeff hm cls
+  rw [eq, (monic_X_sub_C _).nextCoeff_mul hm, nextCoeff_X_sub_C, hz]
+  intro h
+  have H : (-32 : ℤ) + 3 * z = 0 := by exact_mod_cast h
+  omega
+
+
+
+theorem ramsey_star_963_of_parity
+    (parity : ∀ (θ:ℝ) {d:ℕ}, 0<d → d≤995 → Waddle51.vieta (31-θ^2) d=2 →
+       (minpoly ℚ θ).comp (-X)=minpoly ℚ θ) : Deldor14.Star.number 963=995 :=
+  star_963_of_classification (fun θ _ pos le h => Or.inr (Or.inr (parity θ pos le h))) trace_obstruction
+
+end Deldor14.Star.Star963
+
+end
+
+section
+/- Recover the order of a root of unity from a single scalar Viète equation.
+The norm of a shifted real cyclotomic factor then determines parity of the minimal polynomial. -/
+namespace Deldor14.Star.Lift963
+open Polynomial
+open scoped Polynomial
+
+private theorem cast_vieta {μ : ℝ} {z : ℂ} (nz : z≠0) (eq : (μ:ℂ)=z+z⁻¹) (n : ℕ) :
+    ((Waddle51.vieta μ n : ℝ):ℂ) = z^n+(z⁻¹)^n := by
+  induction n using Nat.twoStepInduction with
+  | zero => simp [Waddle51.vieta]; norm_num
+  | one => simpa [Waddle51.vieta] using eq
+  | more n ih ih' =>
+    rw [Waddle51.vieta]
+    push_cast
+    rw [ih',ih,eq]
+    simp only [pow_succ]
+    field_simp
+    ring
+
+theorem primitive_of_vieta {μ : ℝ} {d : ℕ} (hd : 0 < d) (v : Waddle51.vieta μ d=2) :
+    ∃ (z : ℂ) (k : ℕ), 0<k ∧ k≤d ∧ IsPrimitiveRoot z k ∧ (μ:ℂ)=z+z⁻¹ := by
+  obtain ⟨s,hs⟩ := IsAlgClosed.exists_pow_nat_eq ((μ:ℂ)^2-4) (by decide : 0<2)
+  let z := ((μ:ℂ)+s)/2
+  have quad : z^2-(μ:ℂ)*z+1=0 := by dsimp [z]; linear_combination hs/4
+  have nz : z≠0 := by intro eq; simp [eq] at quad
+  have eq : (μ:ℂ)=z+z⁻¹ := by field_simp; linear_combination -quad
+  have vl := cast_vieta nz eq d
+  rw [v] at vl
+  have nz' : z^d≠0 := pow_ne_zero _ nz
+  have s2 : z^d+(z^d)⁻¹=2 := by simpa [inv_pow] using vl.symm
+  have zpow : z^d=1 := by
+    field_simp at s2
+    have zero : (z^d-1)^2=0 := by linear_combination s2
+    exact sub_eq_zero.mp (eq_zero_of_pow_eq_zero zero)
+  have div := orderOf_dvd_of_pow_eq_one zpow
+  exact ⟨z,orderOf z,Nat.pos_of_dvd_of_pos div hd,Nat.le_of_dvd hd div,IsPrimitiveRoot.orderOf z,eq⟩
+
+private theorem even_of_rat_square {θ : ℝ} {b : ℚ} (ns : ¬IsSquare b) (root : θ^2=(b:ℝ)) :
+    (minpoly ℚ θ).comp (-X)=minpoly ℚ θ := by
+  apply Poly51.minpoly_even_of_nonsquare_norm (X-C b) (monic_X_sub_C _) (irreducible_X_sub_C _)
+  · simpa using ns
+  · simp [root]
+
+theorem even_of_vieta {t : ℚ} {θ : ℝ} {d : ℕ}
+    (hd : 0<d) (v : Waddle51.vieta ((t:ℝ)-θ^2) d=2)
+    (lo : ¬IsSquare (t-2)) (hi : ¬IsSquare (t+2))
+    (data : ∀ k, 3≤k → k≤d → ∃ g : ℚ[X], g.Monic ∧ 2*g.natDegree=k.totient ∧
+      ¬IsSquare ((-1:ℚ)^g.natDegree*g.coeff 0) ∧
+      ∀ z : ℂ, IsPrimitiveRoot z k → aeval ((t:ℂ)-(z+z⁻¹)) g=0) :
+    (minpoly ℚ θ).comp (-X)=minpoly ℚ θ := by
+  obtain ⟨z,k,kpos,kd,prim,eq⟩ := primitive_of_vieta hd v
+  by_cases small : k≤2
+  · rcases (show k=1 ∨ k=2 by omega) with rfl|rfl
+    · have z1 : z=1 := by simpa using prim.pow_eq_one
+      have θeq : (t:ℝ)-θ^2=2 := by exact_mod_cast (by norm_num [z1] at eq ⊢; exact eq : (((t:ℝ)-θ^2:ℝ):ℂ)=2)
+      apply even_of_rat_square lo
+      push_cast
+      linarith
+    · have zn : z=-1 := prim.eq_neg_one_of_two_right
+      have θeq : (t:ℝ)-θ^2= -2 := by exact_mod_cast (by norm_num [zn] at eq ⊢; exact eq : (((t:ℝ)-θ^2:ℝ):ℂ)= -2)
+      apply even_of_rat_square hi
+      push_cast
+      linarith
+  · obtain ⟨g,mon,deg,ns,atRoot⟩ := data k (by omega) kd
+    have hr := atRoot z prim
+    have irr := Poly51.irreducible_at_shifted_half_totient prim t g mon hr deg
+    apply Poly51.minpoly_even_of_nonsquare_norm g mon irr ns
+    have heq : (t:ℂ)-(z+z⁻¹)=((θ^2:ℝ):ℂ) := by rw [←eq]; push_cast; ring
+    rw [heq] at hr
+    exact (aeval_algebraMap_eq_zero_iff_of_injective (algebraMap ℝ ℂ).injective).mp hr
+
+end Deldor14.Star.Lift963
+
+end
+
+section
+namespace Deldor14.Star.Lift963
+open Polynomial
+open scoped Polynomial
+
+/-- Shift a monic polynomial by the affine involution q ↦ t − q and restore monicity. -/
+noncomputable def shifted (t : ℚ) (f : ℚ[X]) : ℚ[X] :=
+  C ((-1:ℚ)^f.natDegree) * f.comp (C t-X)
+
+private lemma line_degree (t : ℚ) : (C t-X).natDegree=1 :=
+  (natDegree_sub_eq_right_of_natDegree_lt (by simp : (C t).natDegree < (X:ℚ[X]).natDegree)).trans natDegree_X
+
+theorem shifted_degree (t : ℚ) (f : ℚ[X]) : (shifted t f).natDegree=f.natDegree := by
+  rw [shifted,natDegree_C_mul (pow_ne_zero _ (by norm_num : (-1:ℚ)≠0)),natDegree_comp,line_degree,mul_one]
+
+theorem shifted_monic (t : ℚ) {f : ℚ[X]} (mon : f.Monic) : (shifted t f).Monic := by
+  have deg : (C t).degree < (X:ℚ[X]).degree := degree_C_le.trans_lt (by simp)
+  have coeff : (C t-X).leadingCoeff = -1 := by simp [leadingCoeff_sub_of_degree_lt' deg]
+  rw [Monic.def,shifted,leadingCoeff_mul,leadingCoeff_C,leadingCoeff_comp (by rw [line_degree]; decide),
+    mon.leadingCoeff,coeff,one_mul,← mul_pow]
+  simp
+
+theorem shifted_norm (t : ℚ) (f : ℚ[X]) :
+    (-1:ℚ)^(shifted t f).natDegree*(shifted t f).coeff 0 = f.eval t := by
+  rw [shifted_degree, coeff_zero_eq_eval_zero]
+  simp only [shifted,eval_mul,eval_C,eval_comp,eval_sub,eval_X,sub_zero]
+  rw [← mul_assoc,← mul_pow]
+  simp
+
+theorem even_of_real_factors {t : ℚ} {θ : ℝ} {d : ℕ}
+    (hd : 0<d) (v : Waddle51.vieta ((t:ℝ)-θ^2) d=2)
+    (lo : ¬IsSquare (t-2)) (hi : ¬IsSquare (t+2))
+    (data : ∀ k, 3≤k → k≤d → ∃ f : ℚ[X], f.Monic ∧ 2*f.natDegree=k.totient ∧
+      ¬IsSquare (f.eval t) ∧ ∀ z : ℂ, IsPrimitiveRoot z k → aeval (z+z⁻¹) f=0) :
+    (minpoly ℚ θ).comp (-X)=minpoly ℚ θ := by
+  apply even_of_vieta hd v lo hi
+  intro k hk kd
+  obtain ⟨f,mon,deg,ns,roots⟩ := data k hk kd
+  refine ⟨shifted t f, shifted_monic t mon, (by rwa [shifted_degree]), (by rwa [shifted_norm]), ?_⟩
+  intro z pr
+  have point : (t:ℂ)-((t:ℂ)-(z+z⁻¹))=z+z⁻¹ := by ring
+  simp [shifted,aeval_comp,point,roots z pr]
+end Deldor14.Star.Lift963
+
+end
+
+section
+namespace Deldor14.Star.Lift963
+open Polynomial Shell963
+open scoped Polynomial
+
+private lemma cast_cheb (x : ℤ) (n : ℕ) :
+    ((cheb x n : ℤ):ℚ) = cheb (x:ℚ) n := by
+  induction n using Nat.twoStepInduction with
+  | zero => norm_num [cheb]
+  | one => rfl
+  | more n h h' => simp [cheb,h,h']
+
+private lemma cast_ces (x c : ℤ) (l : List ℤ) :
+    ((ces x c l : ℤ):ℚ) = ces (x:ℚ) c l := by
+  induction l with
+  | nil => rfl
+  | cons a as ih => simp [ces,cast_cheb,ih]
+
+theorem even_31_of_rows {θ : ℝ} {d : ℕ} (hd : 0<d) (bound : d≤995)
+    (v : Waddle51.vieta (31-θ^2) d=2)
+    (rows : ∀ {k : ℕ}, 3≤k → k≤995 → ∃ r : Row, r.ok k=true) :
+    (minpoly ℚ θ).comp (-X)=minpoly ℚ θ := by
+  apply even_of_real_factors (t:=31) hd (by simpa using v)
+  · rw [show (31:ℚ)-2=(29:ℕ) by norm_num, Rat.isSquare_natCast_iff]
+    decide +kernel
+  · rw [show (31:ℚ)+2=(33:ℕ) by norm_num, Rat.isSquare_natCast_iff]
+    decide +kernel
+  intro k hk kle
+  obtain ⟨r,ok⟩ := rows hk (kle.trans bound)
+  obtain ⟨deg,roots,ns⟩ := row_valid r (by omega) ok
+  obtain ⟨mon,degree⟩ := monic_degree r.center r.half
+  refine ⟨P r.center r.half,mon,(by rwa [degree]),?_,?_⟩
+  · have eval : (P r.center r.half).eval 31 = ((ces (31:ℤ) r.center (1::r.half):ℤ):ℚ) := by
+      rw [cast_ces]
+      simpa [P] using map_ces (31:ℚ) r.center (1::r.half)
+    simpa only [eval,Rat.isSquare_intCast_iff] using ns
+  · intro z prim
+    simpa [P,map_ces] using roots z prim
+
+end Deldor14.Star.Lift963
+
+end
+
+section
+namespace Deldor14.Star.Shell963
+set_option maxHeartbeats 20000000 in
+def table3 : Array Row := #[
+⟨0, 0, 1, [1]⟩,
+⟨0, 0, 0, [2]⟩,
+⟨1, 8, 1, [1]⟩,
+⟨0, 0, -1, [3, 2]⟩,
+⟨2, 136, 1, [1]⟩,
+⟨1, 7, 0, [4]⟩,
+⟨2, 119, 1, [3]⟩,
+⟨1, 6, 1, [5, 2]⟩,
+⟨4, 34952, 1, [1]⟩,
+⟨1, 7, -1, [6, 4]⟩,
+⟨5, 559240, 1, [1]⟩,
+⟨2, 134, -1, [7, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid3 (i : Fin 12) : (table3[i.val]?.getD default).ok (i.val+3)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table15 : Array Row := #[
+⟨3, 2166, -1, [5, 3]⟩,
+⟨3, 1911, 0, [8]⟩,
+⟨7, 0x8888888, 1, [1]⟩,
+⟨2, 119, -1, [9, 6]⟩,
+⟨8, 0x88888888, 1, [1]⟩,
+⟨3, 1895, 1, [10, 4]⟩,
+⟨5, 485494, 1, [7, 3]⟩,
+⟨4, 34438, -1, [11, 2]⟩,
+⟨10, 0x8888888888, 1, [1]⟩,
+⟨3, 1911, -1, [12, 8]⟩,
+⟨9, 0x777787777, 1, [5]⟩,
+⟨5, 427654, 1, [13, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid15 (i : Fin 12) : (table15[i.val]?.getD default).ok (i.val+15)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table27 : Array Row := #[
+⟨8, 0x77777777, 1, [9]⟩,
+⟨5, 493415, -1, [14, 4]⟩,
+⟨13, 0x8888888888888, 1, [1]⟩,
+⟨3, 1656, -1, [15, 10, 6]⟩,
+⟨14, 0x88888888888888, 1, [1]⟩,
+⟨7, 0x7777777, 0, [16]⟩,
+⟨9, 0x876876876, -1, [11, 3]⟩,
+⟨7, 0x6868686, 1, [17, 2]⟩,
+⟨11, 0x68768687776, 1, [7, 5]⟩,
+⟨5, 489335, -1, [18, 12]⟩,
+⟨17, 0x88888888888888888, 1, [1]⟩,
+⟨8, 0x86868686, -1, [19, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid27 (i : Fin 12) : (table27[i.val]?.getD default).ok (i.val+27)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table39 : Array Row := #[
+⟨11, 0x76876876876, 1, [13, 3]⟩,
+⟨7, 0x7776777, 1, [20, 8]⟩,
+⟨19, 0x8888888888888888888, 1, [1]⟩,
+⟨5, 484984, 1, [21, 14, 6]⟩,
+⟨20, 0x88888888888888888888, 1, [1]⟩,
+⟨9, 0x787678767, -1, [22, 4]⟩,
+⟨11, 0x77877777677, -1, [15, 9]⟩,
+⟨10, 0x8686868686, -1, [23, 2]⟩,
+⟨22, 0x8888888888888888888888, 1, [1]⟩,
+⟨7, 0x7777777, -1, [24, 16]⟩,
+⟨20, 0x77777787777778777777, 1, [7]⟩,
+⟨9, 0x777767777, 1, [25, 10]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid39 (i : Fin 12) : (table39[i.val]?.getD default).ok (i.val+39)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table51 : Array Row := #[
+⟨15, 0x876876876876876, -1, [17, 3]⟩,
+⟨11, 0x76787678767, 1, [26, 4]⟩,
+⟨25, 0x8888888888888888888888888, 1, [1]⟩,
+⟨8, 0x77777777, -1, [27, 18]⟩,
+⟨19, 0x7767877678777687776, 1, [11, 5]⟩,
+⟨11, 0x77787776777, -1, [28, 8]⟩,
+⟨17, 0x76876876876876876, 1, [19, 3]⟩,
+⟨13, 0x6868686868686, 1, [29, 2]⟩,
+⟨28, 0x8888888888888888888888888888, 1, [1]⟩,
+⟨7, 0x7677787, -1, [30, 20, 12]⟩,
+⟨29, 0x88888888888888888888888888888, 1, [1]⟩,
+⟨14, 0x86868686868686, -1, [31, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid51 (i : Fin 12) : (table51[i.val]?.getD default).ok (i.val+51)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table63 : Array Row := #[
+⟨17, 0x77777677877777677, 1, [21, 9]⟩,
+⟨15, 0x777777777777777, 0, [32]⟩,
+⟨23, 0x87686876868768777687776, -1, [13, 5]⟩,
+⟨9, 0x678876678, -1, [33, 22, 6]⟩,
+⟨32, 0x88888888888888888888888888888888, 1, [1]⟩,
+⟨15, 0x767876787678767, 1, [34, 4]⟩,
+⟨21, 0x876876876876876876876, -1, [23, 3]⟩,
+⟨11, 0x88766667778, 1, [35, 14, 10]⟩,
+⟨34, 0x8888888888888888888888888888888888, 1, [1]⟩,
+⟨11, 0x77777777777, -1, [36, 24]⟩,
+⟨35, 0x88888888888888888888888888888888888, 1, [1]⟩,
+⟨17, 0x68686868686868686, 1, [37, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid63 (i : Fin 12) : (table63[i.val]?.getD default).ok (i.val+63)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table75 : Array Row := #[
+⟨19, 0x7777877777777767777, -1, [25, 15]⟩,
+⟨17, 0x78767876787678767, -1, [38, 4]⟩,
+⟨29, 0x78768767876877687687768777776, -1, [11, 7]⟩,
+⟨11, 0x76678876678, 1, [39, 26, 6]⟩,
+⟨38, 0x88888888888888888888888888888888888888, 1, [1]⟩,
+⟨15, 0x777777767777777, 1, [40, 16]⟩,
+⟨26, 0x77777777777777777777777777, 1, [27]⟩,
+⟨19, 0x6868686868686868686, 1, [41, 2]⟩,
+⟨40, 0x8888888888888888888888888888888888888888, 1, [1]⟩,
+⟨11, 0x77767677787, 1, [42, 28, 12]⟩,
+⟨31, 0x6876868768687686877768777687776, 1, [17, 5]⟩,
+⟨20, 0x86868686868686868686, -1, [43, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid75 (i : Fin 12) : (table75[i.val]?.getD default).ok (i.val+75)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table87 : Array Row := #[
+⟨27, 0x876876876876876876876876876, -1, [29, 3]⟩,
+⟨19, 0x7778777677787776777, -1, [44, 8]⟩,
+⟨43, 0x8888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨11, 0x77677777877, -1, [45, 30, 18]⟩,
+⟨35, 0x77877767787776787777678777768777776, -1, [13, 7]⟩,
+⟨21, 0x787678767876787678767, -1, [46, 4]⟩,
+⟨29, 0x76876876876876876876876876876, 1, [31, 3]⟩,
+⟨22, 0x8686868686868686868686, -1, [47, 2]⟩,
+⟨35, 0x78776787767877678776877768777687776, -1, [19, 5]⟩,
+⟨15, 0x777777777777777, -1, [48, 32]⟩,
+⟨47, 0x88888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨20, 0x77777787777776777777, -1, [49, 14]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid87 (i : Fin 12) : (table87[i.val]?.getD default).ok (i.val+87)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table99 : Array Row := #[
+⟨29, 0x77877777677877777677877777677, -1, [33, 9]⟩,
+⟨19, 0x7777777776777777777, 1, [50, 20]⟩,
+⟨49, 0x8888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨15, 0x678876678876678, -1, [51, 34, 6]⟩,
+⟨50, 0x88888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨23, 0x77767778777677787776777, 1, [52, 8]⟩,
+⟨23, 0x76767788888877665667788, -1, [35, 21, 15]⟩,
+⟨25, 0x6868686868686868686868686, 1, [53, 2]⟩,
+⟨52, 0x8888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨17, 0x77777777777777777, -1, [54, 36]⟩,
+⟨53, 0x88888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨19, 0x7787677678777667778, 1, [55, 22, 10]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid99 (i : Fin 12) : (table99[i.val]?.getD default).ok (i.val+99)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table111 : Array Row := #[
+⟨35, 0x76876876876876876876876876876876876, 1, [37, 3]⟩,
+⟨23, 0x77777778777777767777777, -1, [56, 16]⟩,
+⟨55, 0x8888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨17, 0x76678876678876678, 1, [57, 38, 6]⟩,
+⟨43, 0x8768687686876868768687687776877768777687776, -1, [23, 5]⟩,
+⟨27, 0x767876787678767876787678767, 1, [58, 4]⟩,
+⟨35, 0x77777677877777677877777677877777677, 1, [39, 9]⟩,
+⟨28, 0x8686868686868686868686868686, -1, [59, 2]⟩,
+⟨47, 0x76876787687678768768776876877687687777768777776, 1, [17, 7]⟩,
+⟨15, 0x777677777778777, -1, [60, 40, 24]⟩,
+⟨54, 0x777777777787777777777877777777778777777777787777777777, 1, [11]⟩,
+⟨29, 0x68686868686868686868686868686, 1, [61, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid111 (i : Fin 12) : (table111[i.val]?.getD default).ok (i.val+111)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table123 : Array Row := #[
+⟨39, 0x876876876876876876876876876876876876876, -1, [41, 3]⟩,
+⟨29, 0x78767876787678767876787678767, -1, [62, 4]⟩,
+⟨49, 0x7777777777777777777777778777777777777777777777777, 1, [25]⟩,
+⟨17, 0x77777677677777877, 1, [63, 42, 18]⟩,
+⟨62, 0x88888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨31, 0x7777777777777777777777777777777, 0, [64]⟩,
+⟨41, 0x76876876876876876876876876876876876876876, 1, [43, 3]⟩,
+⟨23, 0x67888876666788777667778, -1, [65, 26, 10]⟩,
+⟨64, 0x8888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨19, 0x7677787877767677787, -1, [66, 44, 12]⟩,
+⟨53, 0x68768686876868687686877768687776868777687777768777776, 1, [19, 7]⟩,
+⟨32, 0x86868686868686868686868686868686, -1, [67, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid123 (i : Fin 12) : (table123[i.val]?.getD default).ok (i.val+123)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table135 : Array Row := #[
+⟨35, 0x77777777877777777777777777677777777, -1, [45, 27]⟩,
+⟨31, 0x7776777877767778777677787776777, 1, [68, 8]⟩,
+⟨67, 0x8888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨21, 0x678876678876678876678, -1, [69, 46, 6]⟩,
+⟨68, 0x88888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨23, 0x78787776767676777777787, 1, [70, 28, 20]⟩,
+⟨45, 0x876876876876876876876876876876876876876876876, -1, [47, 3]⟩,
+⟨34, 0x8686868686868686868686868686868686, -1, [71, 2]⟩,
+⟨59, 0x86868768686868687776868686877777686868777777768687777777776, -1, [13, 11]⟩,
+⟨23, 0x77777777777777777777777, -1, [72, 48]⟩,
+⟨55, 0x7877678776787767877678776787768777687776877768777687776, -1, [29, 5]⟩,
+⟨35, 0x68686868686868686868686868686868686, 1, [73, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid135 (i : Fin 12) : (table135[i.val]?.getD default).ok (i.val+135)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table147 : Array Row := #[
+⟨41, 0x77777777777776777777877777777777776777777, 1, [49, 21]⟩,
+⟨35, 0x76787678767876787678767876787678767, 1, [74, 4]⟩,
+⟨73, 0x8888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨19, 0x7777677777777787777, -1, [75, 50, 30]⟩,
+⟨74, 0x88888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨35, 0x77787776777877767778777677787776777, -1, [76, 8]⟩,
+⟨47, 0x77877777677877777677877777677877777677877777677, -1, [51, 9]⟩,
+⟨29, 0x78766787678877887667766777778, -1, [77, 22, 14]⟩,
+⟨59, 0x77678776787767877678776787767877768777687776877768777687776, 1, [31, 5]⟩,
+⟨23, 0x77767677787877767677787, 1, [78, 52, 12]⟩,
+⟨77, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨38, 0x86868686868686868686868686868686868686, -1, [79, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid147 (i : Fin 12) : (table147[i.val]?.getD default).ok (i.val+147)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table159 : Array Row := #[
+⟨51, 0x876876876876876876876876876876876876876876876876876, -1, [53, 3]⟩,
+⟨31, 0x7777777777777776777777777777777, 1, [80, 32]⟩,
+⟨65, 0x86876868687686868768686877768687776868777686877777687777768777776, -1, [23, 7]⟩,
+⟨26, 0x77777777777777777777777777, -1, [81, 54]⟩,
+⟨80, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨39, 0x767876787678767876787678767876787678767, 1, [82, 4]⟩,
+⟨39, 0x666678999876667776667899876667776667788, -1, [55, 33, 15]⟩,
+⟨40, 0x8686868686868686868686868686868686868686, -1, [83, 2]⟩,
+⟨82, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨23, 0x77777776777677777778777, 1, [84, 56, 24]⟩,
+⟨77, 0x77777777777787777777777778777777777777877777777777787777777777778777777777777, 1, [13]⟩,
+⟨31, 0x8876666788887666677788777667778, 1, [85, 34, 10]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid159 (i : Fin 12) : (table159[i.val]?.getD default).ok (i.val+159)=true := by decide +kernel +revert
+
+
+theorem group_0 {n:ℕ} (lo:3≤n) (hi:n≤170) : ∃r:Row,r.ok n=true := by
+  by_cases h3 : n≤14
+  · let i : Fin 12 := ⟨n-3,by omega⟩
+    exact ⟨_,by simpa only [i,show n-3+3=n by omega] using valid3 i⟩
+  by_cases h15 : n≤26
+  · let i : Fin 12 := ⟨n-15,by omega⟩
+    exact ⟨_,by simpa only [i,show n-15+15=n by omega] using valid15 i⟩
+  by_cases h27 : n≤38
+  · let i : Fin 12 := ⟨n-27,by omega⟩
+    exact ⟨_,by simpa only [i,show n-27+27=n by omega] using valid27 i⟩
+  by_cases h39 : n≤50
+  · let i : Fin 12 := ⟨n-39,by omega⟩
+    exact ⟨_,by simpa only [i,show n-39+39=n by omega] using valid39 i⟩
+  by_cases h51 : n≤62
+  · let i : Fin 12 := ⟨n-51,by omega⟩
+    exact ⟨_,by simpa only [i,show n-51+51=n by omega] using valid51 i⟩
+  by_cases h63 : n≤74
+  · let i : Fin 12 := ⟨n-63,by omega⟩
+    exact ⟨_,by simpa only [i,show n-63+63=n by omega] using valid63 i⟩
+  by_cases h75 : n≤86
+  · let i : Fin 12 := ⟨n-75,by omega⟩
+    exact ⟨_,by simpa only [i,show n-75+75=n by omega] using valid75 i⟩
+  by_cases h87 : n≤98
+  · let i : Fin 12 := ⟨n-87,by omega⟩
+    exact ⟨_,by simpa only [i,show n-87+87=n by omega] using valid87 i⟩
+  by_cases h99 : n≤110
+  · let i : Fin 12 := ⟨n-99,by omega⟩
+    exact ⟨_,by simpa only [i,show n-99+99=n by omega] using valid99 i⟩
+  by_cases h111 : n≤122
+  · let i : Fin 12 := ⟨n-111,by omega⟩
+    exact ⟨_,by simpa only [i,show n-111+111=n by omega] using valid111 i⟩
+  by_cases h123 : n≤134
+  · let i : Fin 12 := ⟨n-123,by omega⟩
+    exact ⟨_,by simpa only [i,show n-123+123=n by omega] using valid123 i⟩
+  by_cases h135 : n≤146
+  · let i : Fin 12 := ⟨n-135,by omega⟩
+    exact ⟨_,by simpa only [i,show n-135+135=n by omega] using valid135 i⟩
+  by_cases h147 : n≤158
+  · let i : Fin 12 := ⟨n-147,by omega⟩
+    exact ⟨_,by simpa only [i,show n-147+147=n by omega] using valid147 i⟩
+  by_cases h159 : n≤170
+  · let i : Fin 12 := ⟨n-159,by omega⟩
+    exact ⟨_,by simpa only [i,show n-159+159=n by omega] using valid159 i⟩
+  omega
+
+end Deldor14.Star.Shell963
+
+end
+
+section
+namespace Deldor14.Star.Shell963
+set_option maxHeartbeats 20000000 in
+def table171 : Array Row := #[
+⟨53, 0x77777677877777677877777677877777677877777677877777677, 1, [57, 9]⟩,
+⟨41, 0x78767876787678767876787678767876787678767, -1, [86, 4]⟩,
+⟨85, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨27, 0x678876678876678876678876678, -1, [87, 58, 6]⟩,
+⟨59, 0x77776777787777777776777787777677778777777777777777777767777, 1, [35, 25]⟩,
+⟨39, 0x777777787777777677777778777777767777777, -1, [88, 16]⟩,
+⟨57, 0x876876876876876876876876876876876876876876876876876876876, -1, [59, 3]⟩,
+⟨43, 0x6868686868686868686868686868686868686868686, 1, [89, 2]⟩,
+⟨88, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨23, 0x77777677777777777877777, -1, [90, 60, 36]⟩,
+⟨89, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨35, 0x77677787787776787777876777766777778, -1, [91, 26, 14]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid171 (i : Fin 12) : (table171[i.val]?.getD default).ok (i.val+171)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table183 : Array Row := #[
+⟨59, 0x76876876876876876876876876876876876876876876876876876876876, 1, [61, 3]⟩,
+⟨43, 0x7778777677787776777877767778777677787776777, -1, [92, 8]⟩,
+⟨71, 0x68768687686876868768687686876868768687776877768777687776877768777687776, 1, [37, 5]⟩,
+⟨29, 0x76678876678876678876678876678, 1, [93, 62, 6]⟩,
+⟨79, 0x7787767877677877678777678776787776787776877767877768777768777687777687777777776, -1, [17, 11]⟩,
+⟨45, 0x787678767876787678767876787678767876787678767, -1, [94, 4]⟩,
+⟨53, 0x77777777777777777677777777877777777777777777677777777, 1, [63, 27]⟩,
+⟨35, 0x78778767767877876776677788777667778, -1, [95, 38, 10]⟩,
+⟨94, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨31, 0x7777777777777777777777777777777, -1, [96, 64]⟩,
+⟨95, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨47, 0x68686868686868686868686868686868686868686868686, 1, [97, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid183 (i : Fin 12) : (table183[i.val]?.getD default).ok (i.val+183)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table195 : Array Row := #[
+⟨47, 0x87656788876678888766777776678888766777776667788, 1, [65, 39, 15]⟩,
+⟨41, 0x77777777777778777777777777767777777777777, -1, [98, 28]⟩,
+⟨97, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨29, 0x77677777877877777677677777877, -1, [99, 66, 18]⟩,
+⟨98, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨39, 0x777777777777777777767777777777777777777, 1, [100, 40]⟩,
+⟨65, 0x76876876876876876876876876876876876876876876876876876876876876876, 1, [67, 3]⟩,
+⟨49, 0x6868686868686868686868686868686868686868686868686, 1, [101, 2]⟩,
+⟨83, 0x77767787776778777677877767787777678777767877776787777678777776877777687777768777776, 1, [29, 7]⟩,
+⟨31, 0x7677787877767677787877767677787, -1, [102, 68, 12]⟩,
+⟨79, 0x7767877678776787767877678776787767877678777687776877768777687776877768777687776, 1, [41, 5]⟩,
+⟨50, 0x86868686868686868686868686868686868686868686868686, -1, [103, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid195 (i : Fin 12) : (table195[i.val]?.getD default).ok (i.val+195)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table207 : Array Row := #[
+⟨65, 0x77877777677877777677877777677877777677877777677877777677877777677, -1, [69, 9]⟩,
+⟨47, 0x77777776777777787777777677777778777777767777777, 1, [104, 16]⟩,
+⟨89, 0x67868768768678687687686876876876868768768777687687687776876877777768768777777687777777776, 1, [19, 11]⟩,
+⟨23, 0x76767768686877869687786, -1, [105, 70, 42, 30]⟩,
+⟨104, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨51, 0x767876787678767876787678767876787678767876787678767, 1, [106, 4]⟩,
+⟨69, 0x876876876876876876876876876876876876876876876876876876876876876876876, -1, [71, 3]⟩,
+⟨52, 0x8686868686868686868686868686868686868686868686868686, -1, [107, 2]⟩,
+⟨83, 0x87686876868768687686876868768687686876868768777687776877768777687776877768777687776, -1, [43, 5]⟩,
+⟨35, 0x77777777777777777777777777777777777, -1, [108, 72]⟩,
+⟨89, 0x76876787687678768767876876787687687768768776876877687687768768777776877777687777768777776, 1, [31, 7]⟩,
+⟨53, 0x68686868686868686868686868686868686868686868686868686, 1, [109, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid207 (i : Fin 12) : (table207[i.val]?.getD default).ok (i.val+207)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table219 : Array Row := #[
+⟨71, 0x76876876876876876876876876876876876876876876876876876876876876876876876, 1, [73, 3]⟩,
+⟨39, 0x777778777677777677787777777676777777787, 1, [110, 44, 20]⟩,
+⟨95, 0x78767877678767876787768776787678776877687767877687768776877768776877687777777687768777777777776, -1, [17, 13]⟩,
+⟨35, 0x76678876678876678876678876678876678, 1, [111, 74, 6]⟩,
+⟨110, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨47, 0x77777777777777787777777777777776777777777777777, -1, [112, 32]⟩,
+⟨59, 0x77777777777777877777777777777777777777777777677777777777777, -1, [75, 45]⟩,
+⟨55, 0x6868686868686868686868686868686868686868686868686868686, 1, [113, 2]⟩,
+⟨112, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨35, 0x77767677787877767677787877767677787, 1, [114, 76, 12]⟩,
+⟨113, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨43, 0x6788887666678888766667887776677788777667778, -1, [115, 46, 10]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid219 (i : Fin 12) : (table219[i.val]?.getD default).ok (i.val+219)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table231 : Array Row := #[
+⟨59, 0x77787778766776678777877787767666777788888877776667666777788, 1, [77, 33, 21]⟩,
+⟨55, 0x7776777877767778777677787776777877767778777677787776777, 1, [116, 8]⟩,
+⟨115, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨35, 0x77777677677777877877777677677777877, 1, [117, 78, 18]⟩,
+⟨91, 0x6876868768687686876868768687686876868768687686877768777687776877768777687776877768777687776, 1, [47, 5]⟩,
+⟨57, 0x787678767876787678767876787678767876787678767876787678767, -1, [118, 4]⟩,
+⟨77, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [79, 3]⟩,
+⟨47, 0x76678767887678766788778876677667887777766777778, 1, [119, 34, 14]⟩,
+⟨118, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨31, 0x7777777677777777777777787777777, -1, [120, 80, 48]⟩,
+⟨119, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨54, 0x777777777787777777777677777777778777777777767777777777, -1, [121, 22]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid231 (i : Fin 12) : (table231[i.val]?.getD default).ok (i.val+231)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table243 : Array Row := #[
+⟨80, 0x77777777777777777777777777777777777777777777777777777777777777777777777777777777, 1, [81]⟩,
+⟨59, 0x76787678767876787678767876787678767876787678767876787678767, 1, [122, 4]⟩,
+⟨83, 0x77777767777778777777777777767777778777777677777787777777777777777777777777776777777, 1, [49, 35]⟩,
+⟨39, 0x678876678876678876678876678876678876678, -1, [123, 82, 6]⟩,
+⟨107, 0x77677877767787767787776787776778777678777678777767877767877776877776787777687777687777768777768777777777776, 1, [19, 13]⟩,
+⟨59, 0x77787776777877767778777677787776777877767778777677787776777, -1, [124, 8]⟩,
+⟨81, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [83, 3]⟩,
+⟨49, 0x7777777777777777777777776777777777777777777777777, 1, [125, 50]⟩,
+⟨124, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨35, 0x77777777777677777677777777777877777, 1, [126, 84, 36]⟩,
+⟨109, 0x7777767777877777677778777777677787777776777877777776778777777767787777777767877777777678777777777687777777776, 1, [23, 11]⟩,
+⟨62, 0x86868686868686868686868686868686868686868686868686868686868686, -1, [127, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid243 (i : Fin 12) : (table243[i.val]?.getD default).ok (i.val+243)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table255 : Array Row := #[
+⟨63, 0x678876667898766678877777887666678877777887666678877777776667788, -1, [85, 51, 15]⟩,
+⟨63, 0x777777777777777777777777777777777777777777777777777777777777777, 0, [128]⟩,
+⟨127, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨41, 0x76678876678876678876678876678876678876678, 1, [129, 86, 6]⟩,
+⟨107, 0x86876868687686868768686876868687686868777686877768687776868777686877768687777768777776877777687777768777776, -1, [37, 7]⟩,
+⟨47, 0x76777878787877767676767778787777777676777777787, -1, [130, 52, 20]⟩,
+⟨83, 0x77877777677877777677877777677877777677877777677877777677877777677877777677877777677, -1, [87, 9]⟩,
+⟨64, 0x8686868686868686868686868686868686868686868686868686868686868686, -1, [131, 2]⟩,
+⟨130, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨39, 0x777677777778777877777776777677777778777, -1, [132, 88, 24]⟩,
+⟨103, 0x8768687686876868768687686876868768687686876868768687687776877768777687776877768777687776877768777687776, -1, [53, 5]⟩,
+⟨53, 0x88766666678888887666677788887776666777887777766777778, 1, [133, 38, 14]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid255 (i : Fin 12) : (table255[i.val]?.getD default).ok (i.val+255)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table267 : Array Row := #[
+⟨87, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [89, 3]⟩,
+⟨65, 0x78767876787678767876787678767876787678767876787678767876787678767, -1, [134, 4]⟩,
+⟨133, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨35, 0x77777777677777777777777777877777777, -1, [135, 90, 54]⟩,
+⟨134, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨63, 0x777777767777777877777776777777787777777677777778777777767777777, 1, [136, 16]⟩,
+⟨71, 0x66666789999987666666666666789998877666777666777789987777666777666777788, -1, [91, 39, 21]⟩,
+⟨67, 0x6868686868686868686868686868686868686868686868686868686868686868686, 1, [137, 2]⟩,
+⟨99, 0x777777777777776777777777877777777777777677777777787777777777777777777677778777777777777777777767777, 1, [55, 25]⟩,
+⟨43, 0x7677787877767677787877767677787877767677787, -1, [138, 92, 12]⟩,
+⟨137, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨68, 0x86868686868686868686868686868686868686868686868686868686868686868686, -1, [139, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid267 (i : Fin 12) : (table267[i.val]?.getD default).ok (i.val+267)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table279 : Array Row := #[
+⟨89, 0x77777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, 1, [93, 9]⟩,
+⟨47, 0x77787778777777767776777677767777777777777778777, 1, [140, 56, 40]⟩,
+⟨139, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨45, 0x678876678876678876678876678876678876678876678, -1, [141, 94, 6]⟩,
+⟨140, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨69, 0x787678767876787678767876787678767876787678767876787678767876787678767, -1, [142, 4]⟩,
+⟨71, 0x88876555678888888876556788877788876556788877788876556788877777776667788, 1, [95, 57, 15]⟩,
+⟨59, 0x66666788888888887776666666677777888888777777766667777777778, -1, [143, 26, 22]⟩,
+⟨119, 0x77877767787776778777677877767787776778777678777767877776787777678777767877776787777687777768777776877777687777768777776, -1, [41, 7]⟩,
+⟨47, 0x77777777777777777777777777777777777777777777777, -1, [144, 96]⟩,
+⟨135, 0x777777777777777787777777777777777877777777777777778777777777777777787777777777777777877777777777777778777777777777777787777777777777777, 1, [17]⟩,
+⟨55, 0x7877876776787787677678778767766777887776677788777667778, -1, [145, 58, 10]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid279 (i : Fin 12) : (table279[i.val]?.getD default).ok (i.val+279)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table291 : Array Row := #[
+⟨95, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [97, 3]⟩,
+⟨71, 0x76787678767876787678767876787678767876787678767876787678767876787678767, 1, [146, 4]⟩,
+⟨145, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨41, 0x77777777777776777777677777777777778777777, 1, [147, 98, 42]⟩,
+⟨115, 0x7877678776787767877678776787767877678776787767877678776787768777687776877768777687776877768777687776877768777687776, -1, [59, 5]⟩,
+⟨71, 0x77767778777677787776777877767778777677787776777877767778777677787776777, 1, [148, 8]⟩,
+⟨89, 0x77777777877777777777777777677777777877777777777777777677777777877777777777777777677777777, -1, [99, 27]⟩,
+⟨73, 0x6868686868686868686868686868686868686868686868686868686868686868686868686, 1, [149, 2]⟩,
+⟨131, 0x78678768768767867876876876787687687687678768768768776876876876877687687687777768768768777776876877777777687687777777768777777777776, -1, [23, 13]⟩,
+⟨39, 0x777777777677777777777777777778777777777, -1, [150, 100, 60]⟩,
+⟨125, 0x77767787776778777677877767787776778777677877776787777678777767877776787777678777767877777687777768777776877777687777768777776, 1, [43, 7]⟩,
+⟨74, 0x86868686868686868686868686868686868686868686868686868686868686868686868686, -1, [151, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid291 (i : Fin 12) : (table291[i.val]?.getD default).ok (i.val+291)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table303 : Array Row := #[
+⟨99, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [101, 3]⟩,
+⟨71, 0x77777778777777767777777877777776777777787777777677777778777777767777777, -1, [152, 16]⟩,
+⟨119, 0x77678776787767877678776787767877678776787767877678776787767877768777687776877768777687776877768777687776877768777687776, 1, [61, 5]⟩,
+⟨47, 0x77677777877877777677677777877877777677677777877, -1, [153, 102, 18]⟩,
+⟨152, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨59, 0x77787776767778777677787877777878777676777776767777777777787, -1, [154, 44, 28]⟩,
+⟨101, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [103, 3]⟩,
+⟨59, 0x77876776787787677678778767767877766777887776677788777667778, 1, [155, 62, 10]⟩,
+⟨154, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨47, 0x77777776777677777778777877777776777677777778777, 1, [156, 104, 24]⟩,
+⟨155, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨77, 0x68686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [157, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid303 (i : Fin 12) : (table303[i.val]?.getD default).ok (i.val+303)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table315 : Array Row := #[
+⟨71, 0x77777677777677777777877877877877877877777777677677577677677777777877877, -1, [105, 63, 45]⟩,
+⟨77, 0x78767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [158, 4]⟩,
+⟨157, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨51, 0x678876678876678876678876678876678876678876678876678, -1, [159, 106, 6]⟩,
+⟨139, 0x7876876787678768767876787687678768776876787687768767876877687687768776876877687768768776877777687768777776877687777768777777777687777777776, -1, [29, 11]⟩,
+⟨63, 0x777777777777777777777777777777767777777777777777777777777777777, 1, [160, 64]⟩,
+⟨105, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [107, 3]⟩,
+⟨65, 0x66678888887666666788888877766667778888777666677777887777766777778, -1, [161, 46, 14]⟩,
+⟨143, 0x68686868768686868686868687776868686868686877777686868686868777777768686868687777777776868686877777777777686868777777777777768687777777777777776, 1, [19, 17]⟩,
+⟨53, 0x77777777777777777777777777777777777777777777777777777, -1, [162, 108]⟩,
+⟨119, 0x77778777777777677778777767777877777777767777877776777787777777776777787777777777777777777677778777777777777777777767777, -1, [65, 25]⟩,
+⟨80, 0x86868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [163, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid315 (i : Fin 12) : (table315[i.val]?.getD default).ok (i.val+315)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table327 : Array Row := #[
+⟨107, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [109, 3]⟩,
+⟨79, 0x7776777877767778777677787776777877767778777677787776777877767778777677787776777, 1, [164, 8]⟩,
+⟨137, 0x68768686876868687686868768686876868687686868768687776868777686877768687776868777686877768687776877777687777768777776877777687777768777776, 1, [47, 7]⟩,
+⟨39, 0x868678595876867776867859678687778687786, -1, [165, 110, 66, 30]⟩,
+⟨164, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨81, 0x787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [166, 4]⟩,
+⟨107, 0x77777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, 1, [111, 9]⟩,
+⟨82, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [167, 2]⟩,
+⟨131, 0x68768687686876868768687686876868768687686876868768687686876868768687776877768777687776877768777687776877768777687776877768777687776, 1, [67, 5]⟩,
+⟨47, 0x77777777777777767777777677777777777777787777777, 1, [168, 112, 48]⟩,
+⟨167, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨77, 0x77777777777767777777777778777777777777677777777777787777777777776777777777777, 1, [169, 26]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid327 (i : Fin 12) : (table327[i.val]?.getD default).ok (i.val+327)=true := by decide +kernel +revert
+
+
+theorem group_1 {n:ℕ} (lo:171≤n) (hi:n≤338) : ∃r:Row,r.ok n=true := by
+  by_cases h171 : n≤182
+  · let i : Fin 12 := ⟨n-171,by omega⟩
+    exact ⟨_,by simpa only [i,show n-171+171=n by omega] using valid171 i⟩
+  by_cases h183 : n≤194
+  · let i : Fin 12 := ⟨n-183,by omega⟩
+    exact ⟨_,by simpa only [i,show n-183+183=n by omega] using valid183 i⟩
+  by_cases h195 : n≤206
+  · let i : Fin 12 := ⟨n-195,by omega⟩
+    exact ⟨_,by simpa only [i,show n-195+195=n by omega] using valid195 i⟩
+  by_cases h207 : n≤218
+  · let i : Fin 12 := ⟨n-207,by omega⟩
+    exact ⟨_,by simpa only [i,show n-207+207=n by omega] using valid207 i⟩
+  by_cases h219 : n≤230
+  · let i : Fin 12 := ⟨n-219,by omega⟩
+    exact ⟨_,by simpa only [i,show n-219+219=n by omega] using valid219 i⟩
+  by_cases h231 : n≤242
+  · let i : Fin 12 := ⟨n-231,by omega⟩
+    exact ⟨_,by simpa only [i,show n-231+231=n by omega] using valid231 i⟩
+  by_cases h243 : n≤254
+  · let i : Fin 12 := ⟨n-243,by omega⟩
+    exact ⟨_,by simpa only [i,show n-243+243=n by omega] using valid243 i⟩
+  by_cases h255 : n≤266
+  · let i : Fin 12 := ⟨n-255,by omega⟩
+    exact ⟨_,by simpa only [i,show n-255+255=n by omega] using valid255 i⟩
+  by_cases h267 : n≤278
+  · let i : Fin 12 := ⟨n-267,by omega⟩
+    exact ⟨_,by simpa only [i,show n-267+267=n by omega] using valid267 i⟩
+  by_cases h279 : n≤290
+  · let i : Fin 12 := ⟨n-279,by omega⟩
+    exact ⟨_,by simpa only [i,show n-279+279=n by omega] using valid279 i⟩
+  by_cases h291 : n≤302
+  · let i : Fin 12 := ⟨n-291,by omega⟩
+    exact ⟨_,by simpa only [i,show n-291+291=n by omega] using valid291 i⟩
+  by_cases h303 : n≤314
+  · let i : Fin 12 := ⟨n-303,by omega⟩
+    exact ⟨_,by simpa only [i,show n-303+303=n by omega] using valid303 i⟩
+  by_cases h315 : n≤326
+  · let i : Fin 12 := ⟨n-315,by omega⟩
+    exact ⟨_,by simpa only [i,show n-315+315=n by omega] using valid315 i⟩
+  by_cases h327 : n≤338
+  · let i : Fin 12 := ⟨n-327,by omega⟩
+    exact ⟨_,by simpa only [i,show n-327+327=n by omega] using valid327 i⟩
+  omega
+
+end Deldor14.Star.Shell963
+
+end
+
+section
+namespace Deldor14.Star.Shell963
+set_option maxHeartbeats 20000000 in
+def table339 : Array Row := #[
+⟨111, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [113, 3]⟩,
+⟨63, 0x787877767676767778787878777676767677777778787777777676777777787, 1, [170, 68, 20]⟩,
+⟨149, 0x68687686868686876868686868768686868777686868687776868686877768686877777686868777776868687777768687777777686877777776868777777768777777777687777777776, 1, [31, 11]⟩,
+⟨53, 0x77777677677777877877777677677777877877777677677777877, 1, [171, 114, 18]⟩,
+⟨146, 0x77777777777777777777777777777777777777777777777787777777777777777777777777777777777777777777777778777777777777777777777777777777777777777777777777, 1, [49]⟩,
+⟨83, 0x77787776777877767778777677787776777877767778777677787776777877767778777677787776777, -1, [172, 8]⟩,
+⟨87, 0x787766667787878787766667788988776666667788988776666667788988776666667788877777776667788, 1, [115, 69, 15]⟩,
+⟨85, 0x6868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [173, 2]⟩,
+⟨172, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨55, 0x7677787877767677787877767677787877767677787877767677787, -1, [174, 116, 12]⟩,
+⟨173, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨59, 0x77778777787777777776777767777677776777777777777777777787777, 1, [175, 70, 50]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid339 (i : Fin 12) : (table339[i.val]?.getD default).ok (i.val+339)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table351 : Array Row := #[
+⟨107, 0x77777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777, 1, [117, 27]⟩,
+⟨79, 0x7777777777777778777777777777777677777777777777787777777777777776777777777777777, -1, [176, 32]⟩,
+⟨175, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨57, 0x678876678876678876678876678876678876678876678876678876678, -1, [177, 118, 6]⟩,
+⟨139, 0x7767877678776787767877678776787767877678776787767877678776787767877678777687776877768777687776877768777687776877768777687776877768777687776, 1, [71, 5]⟩,
+⟨87, 0x767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, 1, [178, 4]⟩,
+⟨95, 0x88765678888876556788888765678888876556777788766788888876667777777666788888876667777777666777788, 1, [119, 51, 21]⟩,
+⟨88, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [179, 2]⟩,
+⟨178, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨47, 0x77777777777677777777777777777777777877777777777, -1, [180, 120, 72]⟩,
+⟨170, 0x77777777777777777787777777777777777778777777777777777777877777777777777777787777777777777777778777777777777777777877777777777777777787777777777777777778777777777777777777, 1, [19]⟩,
+⟨89, 0x68686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [181, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid351 (i : Fin 12) : (table351[i.val]?.getD default).ok (i.val+351)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table363 : Array Row := #[
+⟨109, 0x7777777777877777777777777777777767777777777877777777777777777777767777777777877777777777777777777767777777777, -1, [121, 33]⟩,
+⟨71, 0x77777677777778777778777777767778777777777877767777777776767777777777787, -1, [182, 52, 28]⟩,
+⟨143, 0x87686876868768687686876868768687686876868768687686876868768687686876868768777687776877768777687776877768777687776877768777687776877768777687776, -1, [73, 5]⟩,
+⟨59, 0x76678876678876678876678876678876678876678876678876678876678, 1, [183, 122, 6]⟩,
+⟨182, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨87, 0x777777787777777677777778777777767777777877777776777777787777777677777778777777767777777, -1, [184, 16]⟩,
+⟨119, 0x77877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, -1, [123, 9]⟩,
+⟨71, 0x88766667888876666788887666678888766667778877766777887776677788777667778, 1, [185, 74, 10]⟩,
+⟨155, 0x78768767876876787687678768767876876787687678768767876877687687768768776876877687687768768776876877687687768777776877777687777768777776877777687777768777776, -1, [53, 7]⟩,
+⟨59, 0x77767677787877767677787877767677787877767677787877767677787, 1, [186, 124, 12]⟩,
+⟨185, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨79, 0x7767767877877877876777876776787776787776677787677788777788777667777667777777778, -1, [187, 34, 22]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid363 (i : Fin 12) : (table363[i.val]?.getD default).ok (i.val+363)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table375 : Array Row := #[
+⟨99, 0x777777777777777777777777877777777777777777777777777777777777777777777777776777777777777777777777777, -1, [125, 75]⟩,
+⟨91, 0x7778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, -1, [188, 8]⟩,
+⟨167, 0x76876876786787687687678678768768768767876876876876787687687687687768768768768776876876876877777687687687777768768768777777776876877777777687687777777777768777777777776, 1, [29, 13]⟩,
+⟨53, 0x77777777777777777677777777677777777777777777877777777, 1, [189, 126, 54]⟩,
+⟨188, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨71, 0x77787777787776777776777877777877767777767677777778787777777676777777787, -1, [190, 76, 20]⟩,
+⟨125, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [127, 3]⟩,
+⟨94, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [191, 2]⟩,
+⟨190, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨63, 0x777777777777777777777777777777777777777777777777777777777777777, -1, [192, 128]⟩,
+⟨119, 0x45567889999988766656777888888876665566677788899887666566667788999887766665666677888887777777777778888877666656666778888, -3, [77, 55, 35]⟩,
+⟨95, 0x68686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [193, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid375 (i : Fin 12) : (table375[i.val]?.getD default).ok (i.val+375)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table387 : Array Row := #[
+⟨125, 0x77777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, 1, [129, 9]⟩,
+⟨95, 0x76787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, 1, [194, 4]⟩,
+⟨193, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨47, 0x67858768678678686786777776876868768777778687786, 1, [195, 130, 78, 30]⟩,
+⟨175, 0x7767787767877677877677877678777678776778776787776787776787767877767877767877768777678777678777687777687776787776877776877776877768777768777768777777777687777687777777777777776, 1, [23, 17]⟩,
+⟨83, 0x77777777777777777777777777787777777777777777777777777776777777777777777777777777777, -1, [196, 56]⟩,
+⟨129, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [131, 3]⟩,
+⟨97, 0x6868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [197, 2]⟩,
+⟨155, 0x78776787767877678776787767877678776787767877678776787767877678776787767877678776877768777687776877768777687776877768777687776877768777687776877768777687776, -1, [79, 5]⟩,
+⟨59, 0x77777677777777777877777877777777777677777677777777777877777, -1, [198, 132, 36]⟩,
+⟨197, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨98, 0x86868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [199, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid387 (i : Fin 12) : (table387[i.val]?.getD default).ok (i.val+387)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table399 : Array Row := #[
+⟨107, 0x78876788766777667887678876788766777667887677766788877777667887788766777777777667887788766777777777666777788, -1, [133, 57, 21]⟩,
+⟨79, 0x7777777777777777777777777777777777777776777777777777777777777777777777777777777, 1, [200, 80]⟩,
+⟨199, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨65, 0x76678876678876678876678876678876678876678876678876678876678876678, 1, [201, 134, 6]⟩,
+⟨179, 0x87686876867868768687686786876868768687687686876868768768687686876877768768687687776876868768777687776876877768777687687776877768777777687776877777768777687777777777768777777777776, -1, [31, 13]⟩,
+⟨99, 0x767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, 1, [202, 4]⟩,
+⟨107, 0x77777777777777777777777777877777777777777777777777777777777777777777777777777777677777777777777777777777777, -1, [135, 81]⟩,
+⟨83, 0x77767767778778777677677787787777876777767877778767777678777776677777887777766777778, 1, [203, 58, 14]⟩,
+⟨179, 0x76787687678767876876787678768767876787687768767876877687678768776876787687768776876877687768768776877687687768776877777687768777776877687777768776877777777768777777777687777777776, 1, [37, 11]⟩,
+⟨63, 0x777677777778777877777776777677777778777877777776777677777778777, -1, [204, 136, 24]⟩,
+⟨203, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨79, 0x7787677678778767767877876776787787677678777667778877766777887776677788777667778, 1, [205, 82, 10]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid399 (i : Fin 12) : (table399[i.val]?.getD default).ok (i.val+399)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table411 : Array Row := #[
+⟨135, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [137, 3]⟩,
+⟨101, 0x78767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [206, 4]⟩,
+⟨173, 0x76876787687678768767876876787687678768767876876787687678768768776876877687687768768776876877687687768768776876877687687777768777776877777687777768777776877777687777768777776, 1, [59, 7]⟩,
+⟨65, 0x77677777877877777677677777877877777677677777877877777677677777877, -1, [207, 138, 18]⟩,
+⟨163, 0x8768687686876868768687686876868768687686876868768687686876868768687686876868768687687776877768777687776877768777687776877768777687776877768777687776877768777687776, -1, [83, 5]⟩,
+⟨95, 0x77777777777777767777777777777778777777777777777677777777777777787777777777777776777777777777777, 1, [208, 32]⟩,
+⟨137, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [139, 3]⟩,
+⟨89, 0x87666788766678887667888876678876666788766777887667887776678877777788766777777667777777778, 1, [209, 38, 22]⟩,
+⟨208, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨47, 0x77767776777776787678767877777876797678777778767, -1, [210, 140, 84, 60]⟩,
+⟨209, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨104, 0x86868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [211, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid411 (i : Fin 12) : (table411[i.val]?.getD default).ok (i.val+411)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table423 : Array Row := #[
+⟨137, 0x77877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, -1, [141, 9]⟩,
+⟨103, 0x7776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, 1, [212, 8]⟩,
+⟨159, 0x777767777877777777767777877776777787777777776777787777677778777777777677778777767777877777777777777777776777787777777777777777777677778777777777777777777767777, 1, [85, 25]⟩,
+⟨69, 0x678876678876678876678876678876678876678876678876678876678876678876678, -1, [213, 142, 6]⟩,
+⟨179, 0x68768686876868687686868768686876868687686868768686876868687686877768687776868777686877768687776868777686877768687776868777687777768777776877777687777768777776877777687777768777776, 1, [61, 7]⟩,
+⟨105, 0x787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [214, 4]⟩,
+⟨119, 0x76767676767788888888888877676767665667676767788877788888877788877665667665667788877788877777788877777777665667777777788, -1, [143, 39, 33]⟩,
+⟨83, 0x67888876666788887666678888766667888876666788777667778877766777887776677788777667778, -1, [215, 86, 10]⟩,
+⟨214, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨71, 0x77777777777777777777777777777777777777777777777777777777777777777777777, -1, [216, 144]⟩,
+⟨215, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨89, 0x76678767887678766787678876787667887788766776678877887667766788777776677777887777766777778, 1, [217, 62, 14]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid423 (i : Fin 12) : (table423[i.val]?.getD default).ok (i.val+423)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table435 : Array Row := #[
+⟨111, 0x777677778877776777677778877776778787767777776778787767777776778787767777776778787767777776667788877777776667788, -1, [145, 87, 15]⟩,
+⟨107, 0x76787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, 1, [218, 4]⟩,
+⟨197, 0x76787678768767876787678767876877687678767876787687768776876787678768776877687768767876877687768776877687687768776877687768777776877687768776877777777768776877687777777777777687768777777777777777776, 1, [23, 19]⟩,
+⟨71, 0x76678876678876678876678876678876678876678876678876678876678876678876678, 1, [219, 146, 6]⟩,
+⟨218, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨79, 0x7777777777787777777677777777777677777778777777777777777677767777777777777778777, 1, [220, 88, 40]⟩,
+⟨125, 0x77777777777777777777777777777777777777777677777777777777777777877777777777777777777777777777777777777777677777777777777777777, 1, [147, 63]⟩,
+⟨95, 0x78767877876787678767766776787678778877887787677667766776677788778877887777777667766777777777778, -1, [221, 34, 26]⟩,
+⟨220, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨71, 0x77767677787877767677787877767677787877767677787877767677787877767677787, 1, [222, 148, 12]⟩,
+⟨175, 0x7877678776787767877678776787767877678776787767877678776787767877678776787767877678776787768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, -1, [89, 5]⟩,
+⟨110, 0x86868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [223, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid435 (i : Fin 12) : (table435[i.val]?.getD default).ok (i.val+435)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table447 : Array Row := #[
+⟨147, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [149, 3]⟩,
+⟨95, 0x77777777777777777777777777777778777777777777777777777777777777767777777777777777777777777777777, -1, [224, 64]⟩,
+⟨223, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨59, 0x77777777777777677777777777777777777777777777877777777777777, -1, [225, 150, 90]⟩,
+⟨199, 0x6786876876867868768768678687687686786876876868768768768687687687686876876876868768768777687687687776876876877768768768777687687777776876877777768768777777687687777776877777777768777777777687777777776, 1, [41, 11]⟩,
+⟨111, 0x767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, 1, [226, 4]⟩,
+⟨149, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [151, 3]⟩,
+⟨112, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [227, 2]⟩,
+⟨143, 0x56666767777889999988877766656667767667778777667789999888777666555566677788888887777788888776666676666677888887777777777888887766666766666778888, -1, [91, 65, 35]⟩,
+⟨71, 0x77777776777677777778777877777776777677777778777877777776777677777778777, 1, [228, 152, 24]⟩,
+⟨227, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨113, 0x68686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [229, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid447 (i : Fin 12) : (table447[i.val]?.getD default).ok (i.val+447)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table459 : Array Row := #[
+⟨143, 0x77777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777, -1, [153, 27]⟩,
+⟨87, 0x767778787878777676767677787878787776767676777878777777767677777778787777777676777777787, -1, [230, 92, 20]⟩,
+⟨229, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨59, 0x77787778768776876777677767767686777768686877778687868777786, 1, [231, 154, 66, 42]⟩,
+⟨230, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨111, 0x777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777, 1, [232, 16]⟩,
+⟨119, 0x77776677778777877776677778777877777787767677877777787767677877777787767677877777787767677877777776667788877777776667788, 1, [155, 93, 15]⟩,
+⟨115, 0x6868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [233, 2]⟩,
+⟨232, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨71, 0x77777777777677777677777777777877777877777777777677777677777777777877777, 1, [234, 156, 36]⟩,
+⟨197, 0x78768767876876787687678768767876876787687678768767876876787687678768776876877687687768768776876877687687768768776876877687687768768776877777687777768777776877777687777768777776877777687777768777776, -1, [67, 7]⟩,
+⟨91, 0x8876666788887666678888766667888876666788887666677788777667778877766777887776677788777667778, 1, [235, 94, 10]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid459 (i : Fin 12) : (table459[i.val]?.getD default).ok (i.val+459)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table471 : Array Row := #[
+⟨155, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [157, 3]⟩,
+⟨115, 0x7778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, -1, [236, 8]⟩,
+⟨209, 0x77778777776777787777767777877777677778777776777877777767778777777677787777776777877777767787777777677877777776778777777767787777777678777777776787777777767877777777678777777776877777777768777777777687777777776, -1, [43, 11]⟩,
+⟨77, 0x76678876678876678876678876678876678876678876678876678876678876678876678876678, 1, [237, 158, 6]⟩,
+⟨179, 0x77777777787777777777777767777777778777777777777776777777777877777777777777677777777787777777777777767777877777777777777777776777787777777777777777777677778777777777777777777767777, -1, [95, 25]⟩,
+⟨95, 0x77767677787776777878777677787776767778787777787877767677777676777878777777777776767777777777787, 1, [238, 68, 28]⟩,
+⟨155, 0x77877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, -1, [159, 9]⟩,
+⟨118, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [239, 2]⟩,
+⟨238, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨63, 0x777777777777777677777777777777777777777777777778777777777777777, -1, [240, 160, 96]⟩,
+⟨215, 0x86868768686868686876868686868687686868686877768686868687776868686868777686868687777768686868777776868686877777686868777777768686877777776868687777777686877777777768687777777776868777777777687777777777768777777777776, -1, [37, 13]⟩,
+⟨119, 0x68686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [241, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid471 (i : Fin 12) : (table471[i.val]?.getD default).ok (i.val+471)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table483 : Array Row := #[
+⟨131, 0x76678877788766787667876678877788766787667876678877777666788777876678877777777788766776678877777777788766776678877777777777666777788, 1, [161, 69, 21]⟩,
+⟨109, 0x7777777777777777777778777777777777777777777677777777777777777777787777777777777777777776777777777777777777777, -1, [242, 44]⟩,
+⟨191, 0x68768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, 1, [97, 5]⟩,
+⟨80, 0x77777777777777777777777777777777777777777777777777777777777777777777777777777777, -1, [243, 162]⟩,
+⟨242, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨119, 0x77767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, 1, [244, 8]⟩,
+⟨161, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [163, 3]⟩,
+⟨83, 0x77777787777778777777777777767777776777777677777767777777777777777777777777778777777, 1, [245, 98, 70]⟩,
+⟨244, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨79, 0x7677787877767677787877767677787877767677787877767677787877767677787877767677787, -1, [246, 164, 12]⟩,
+⟨223, 0x8678686876868768686786868768687686868768687686876868687686876868777686876868768687776868768687776877768687686877768777686877768777687776868777687776877777687776877768777776877768777777777768777687777777777687777777777777776, -1, [29, 17]⟩,
+⟨107, 0x77877877767767767767778767778778777678777678777787677787677776677776787777887777887777766777766777777777778, 1, [247, 38, 26]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid483 (i : Fin 12) : (table483[i.val]?.getD default).ok (i.val+483)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table495 : Array Row := #[
+⟨119, 0x77677677677677777877977977977877777677677677777777777677677677777877977977877777677677677777777777677677677777777877877, -1, [165, 99, 45]⟩,
+⟨119, 0x77777778777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777, -1, [248, 16]⟩,
+⟨209, 0x77767787776778777677877767787776778777677877767787776778777677877767787777678777767877776787777678777767877776787777678777767877776787777678777776877777687777768777776877777687777768777776877777687777768777776, 1, [71, 7]⟩,
+⟨81, 0x678876678876678876678876678876678876678876678876678876678876678876678876678876678, -1, [249, 166, 6]⟩,
+⟨248, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨99, 0x777777777777777777777777777777777777777777777777767777777777777777777777777777777777777777777777777, 1, [250, 100]⟩,
+⟨165, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [167, 3]⟩,
+⟨124, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [251, 2]⟩,
+⟨250, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨71, 0x77777777777777777777777677777777777677777777777777777777777877777777777, 1, [252, 168, 72]⟩,
+⟨199, 0x7767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, 1, [101, 5]⟩,
+⟨109, 0x7777767777677777877778777777877767777776777877777776776777777787787777777787677777777678777777777667777777778, 1, [253, 46, 22]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid495 (i : Fin 12) : (table495[i.val]?.getD default).ok (i.val+495)=true := by decide +kernel +revert
+
+
+theorem group_2 {n:ℕ} (lo:339≤n) (hi:n≤506) : ∃r:Row,r.ok n=true := by
+  by_cases h339 : n≤350
+  · let i : Fin 12 := ⟨n-339,by omega⟩
+    exact ⟨_,by simpa only [i,show n-339+339=n by omega] using valid339 i⟩
+  by_cases h351 : n≤362
+  · let i : Fin 12 := ⟨n-351,by omega⟩
+    exact ⟨_,by simpa only [i,show n-351+351=n by omega] using valid351 i⟩
+  by_cases h363 : n≤374
+  · let i : Fin 12 := ⟨n-363,by omega⟩
+    exact ⟨_,by simpa only [i,show n-363+363=n by omega] using valid363 i⟩
+  by_cases h375 : n≤386
+  · let i : Fin 12 := ⟨n-375,by omega⟩
+    exact ⟨_,by simpa only [i,show n-375+375=n by omega] using valid375 i⟩
+  by_cases h387 : n≤398
+  · let i : Fin 12 := ⟨n-387,by omega⟩
+    exact ⟨_,by simpa only [i,show n-387+387=n by omega] using valid387 i⟩
+  by_cases h399 : n≤410
+  · let i : Fin 12 := ⟨n-399,by omega⟩
+    exact ⟨_,by simpa only [i,show n-399+399=n by omega] using valid399 i⟩
+  by_cases h411 : n≤422
+  · let i : Fin 12 := ⟨n-411,by omega⟩
+    exact ⟨_,by simpa only [i,show n-411+411=n by omega] using valid411 i⟩
+  by_cases h423 : n≤434
+  · let i : Fin 12 := ⟨n-423,by omega⟩
+    exact ⟨_,by simpa only [i,show n-423+423=n by omega] using valid423 i⟩
+  by_cases h435 : n≤446
+  · let i : Fin 12 := ⟨n-435,by omega⟩
+    exact ⟨_,by simpa only [i,show n-435+435=n by omega] using valid435 i⟩
+  by_cases h447 : n≤458
+  · let i : Fin 12 := ⟨n-447,by omega⟩
+    exact ⟨_,by simpa only [i,show n-447+447=n by omega] using valid447 i⟩
+  by_cases h459 : n≤470
+  · let i : Fin 12 := ⟨n-459,by omega⟩
+    exact ⟨_,by simpa only [i,show n-459+459=n by omega] using valid459 i⟩
+  by_cases h471 : n≤482
+  · let i : Fin 12 := ⟨n-471,by omega⟩
+    exact ⟨_,by simpa only [i,show n-471+471=n by omega] using valid471 i⟩
+  by_cases h483 : n≤494
+  · let i : Fin 12 := ⟨n-483,by omega⟩
+    exact ⟨_,by simpa only [i,show n-483+483=n by omega] using valid483 i⟩
+  by_cases h495 : n≤506
+  · let i : Fin 12 := ⟨n-495,by omega⟩
+    exact ⟨_,by simpa only [i,show n-495+495=n by omega] using valid495 i⟩
+  omega
+
+end Deldor14.Star.Shell963
+
+end
+
+section
+namespace Deldor14.Star.Shell963
+set_option maxHeartbeats 20000000 in
+def table507 : Array Row := #[
+⟨155, 0x77777777777777777777777776777777777777877777777777777777777777776777777777777877777777777777777777777776777777777777877777777777777777777777776777777777777, 1, [169, 39]⟩,
+⟨125, 0x78767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [254, 4]⟩,
+⟨253, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨63, 0x876876867858768678677777687686876877777867868678677777778687786, -1, [255, 170, 102, 30]⟩,
+⟨215, 0x76876787687678768767876876787687678768767876876787687678768767876876787687687768768776876877687687768768776876877687687768768776876877687687768768777776877777687777768777776877777687777768777776877777687777768777776, 1, [73, 7]⟩,
+⟨127, 0x7777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777, 0, [256]⟩,
+⟨161, 0x77777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777, 1, [171, 27]⟩,
+⟨127, 0x6868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [257, 2]⟩,
+⟨203, 0x87686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, -1, [103, 5]⟩,
+⟨83, 0x77767677787877767677787877767677787877767677787877767677787877767677787877767677787, 1, [258, 172, 12]⟩,
+⟨229, 0x8768768678687687686786876876867868768768678687687687686876876876868768768768687687687686876876876877768768768777687687687776876876877768768768777777687687777776876877777768768777777687687777777776877777777768777777777687777777776, -1, [47, 11]⟩,
+⟨107, 0x66678888887666666788888876666667888888777666677788887776666777888877766667777788777776677777887777766777778, -1, [259, 74, 14]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid507 (i : Fin 12) : (table507[i.val]?.getD default).ok (i.val+507)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table519 : Array Row := #[
+⟨171, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [173, 3]⟩,
+⟨95, 0x77767777777877787778777877777776777677767776777777787778777777777777777677767777777777777778777, -1, [260, 104, 40]⟩,
+⟨259, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨83, 0x77677777877877777677677777877877777677677777877877777677677777877877777677677777877, -1, [261, 174, 18]⟩,
+⟨260, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨129, 0x787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [262, 4]⟩,
+⟨119, 0x77777777767777777776777777777777778777787777877778777787777877777777777777677776777757777677776777777777777778777787777, -1, [175, 105, 75]⟩,
+⟨130, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [263, 2]⟩,
+⟨239, 0x67867868768768768678678687687687686786876876876876867868768768768768687687687687687686876876876876877768768768768768777687687687687777776876876876877777768768768777777777687687687777777776876877777777777768768777777777777687777777777777776, 1, [31, 17]⟩,
+⟨79, 0x7777777677777777777777787777777877777777777777767777777677777777777777787777777, -1, [264, 176, 48]⟩,
+⟨252, 0x777777777777777777777787777777777777777777777877777777777777777777778777777777777777777777787777777777777777777777877777777777777777777778777777777777777777777787777777777777777777777877777777777777777777778777777777777777777777787777777777777777777777, 1, [23]⟩,
+⟨103, 0x6788887666678888766667888876666788887666678888766667887776677788777667778877766777887776677788777667778, -1, [265, 106, 10]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid519 (i : Fin 12) : (table519[i.val]?.getD default).ok (i.val+519)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table531 : Array Row := #[
+⟨173, 0x77877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, -1, [177, 9]⟩,
+⟨107, 0x78787776767676767677787878787878777676767677777778787878777777767676767777777878777777777776767777777777787, 1, [266, 76, 28]⟩,
+⟨239, 0x68686876868686868687686868686868768686868686877768686868687776868686868777686868686877777686868687777768686868777776868686877777776868687777777686868777777768686877777777768687777777776868777777777686877777777777687777777777768777777777776, 1, [41, 13]⟩,
+⟨87, 0x678876678876678876678876678876678876678876678876678876678876678876678876678876678876678, -1, [267, 178, 6]⟩,
+⟨211, 0x6876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, 1, [107, 5]⟩,
+⟨131, 0x77787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, -1, [268, 8]⟩,
+⟨177, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [179, 3]⟩,
+⟨133, 0x6868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [269, 2]⟩,
+⟨209, 0x77777777777778777777777777767777778777777777777767777777777777877777777777776777777877777777777777777777677777787777777777777677777787777777777777777777767777778777777777777777777777777777777777777777776777777, -1, [77, 49]⟩,
+⟨71, 0x77777777777777777677777777777777777777777777777777777877777777777777777, -1, [270, 180, 108]⟩,
+⟨269, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨134, 0x86868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [271, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid531 (i : Fin 12) : (table531[i.val]?.getD default).ok (i.val+531)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table543 : Array Row := #[
+⟨179, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [181, 3]⟩,
+⟨127, 0x7777777777777776777777777777777877777777777777767777777777777778777777777777777677777777777777787777777777777776777777777777777, 1, [272, 32]⟩,
+⟨215, 0x78776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, -1, [109, 5]⟩,
+⟨71, 0x86868769595967868686868686785958677686777686777769587777868777868777786, -1, [273, 182, 78, 42]⟩,
+⟨272, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨135, 0x767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, 1, [274, 4]⟩,
+⟨179, 0x77777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, 1, [183, 9]⟩,
+⟨99, 0x777777777777778777777777677777777777777677777777787777777777777777777677776777777777777777777787777, 1, [275, 110, 50]⟩,
+⟨251, 0x77778777767778777767777877776777877777677787777677787777767778777776778777776777877777677877777767787777767787777776778777777678777777677877777767877777776787777776787777777678777777768777777767877777776877777777687777777687777777768777777777777777776, -1, [29, 19]⟩,
+⟨87, 0x777677777778777877777776777677777778777877777776777677777778777877777776777677777778777, -1, [276, 184, 24]⟩,
+⟨233, 0x86876868687686868768686876868687686868768686876868687686868768686876868687686868777686877768687776868777686877768687776868777686877768687776868777686877768687777768777776877777687777768777776877777687777768777776877777687777768777776, -1, [79, 7]⟩,
+⟨137, 0x68686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [277, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid543 (i : Fin 12) : (table543[i.val]?.getD default).ok (i.val+543)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table555 : Array Row := #[
+⟨143, 0x76767788887767676767788887767676767788888877665667788888877665667788888877665667788888877665667788888877665667788877777776667788877777776667788, -1, [185, 111, 15]⟩,
+⟨137, 0x78767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [278, 4]⟩,
+⟨277, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨89, 0x77777677677777877877777677677777877877777677677777877877777677677777877877777677677777877, 1, [279, 186, 18]⟩,
+⟨251, 0x78767877678767876787767876787678776787678767877687767876787768776787678776877678767877687768776787768776877678776877687767877687768776877768776877687776877687768777687768776877777776877687777777687768777777768776877777777777687777777777768777777777776, -1, [43, 13]⟩,
+⟨95, 0x77777778777777787777777777777776777777767777777677777776777777777777777777777777777777787777777, 1, [280, 112, 80]⟩,
+⟨159, 0x777787777766777667777787778987778777776677766777667777787778876778777777787767887667777776678876778777777787767776667777777788877888777777776667776667777777788, 1, [187, 51, 33]⟩,
+⟨139, 0x6868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [281, 2]⟩,
+⟨280, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨91, 0x7677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787, -1, [282, 188, 12]⟩,
+⟨223, 0x8768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, -1, [113, 5]⟩,
+⟨140, 0x86868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [283, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid555 (i : Fin 12) : (table555[i.val]?.getD default).ok (i.val+555)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table567 : Array Row := #[
+⟨161, 0x77777777777777777777777777777777777777777777777777777677777777777777777777777777877777777777777777777777777777777777777777777777777777677777777777777777777777777, 1, [189, 81]⟩,
+⟨139, 0x7778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, -1, [284, 8]⟩,
+⟨283, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨71, 0x68678595876868686876958768677768678596786877786876958768677777778687786, 1, [285, 190, 114, 30]⟩,
+⟨284, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨119, 0x76767676767778787878787878787878777777767676767676767677777777777878787878787777777777777776767676777777777777777777787, -1, [286, 52, 44]⟩,
+⟨189, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [191, 3]⟩,
+⟨119, 0x77677787787776776777877877767767778778777678777787677776787777876777767877778767777667777788777776677777887777766777778, -1, [287, 82, 14]⟩,
+⟨219, 0x777787777777776777787777677778777777777677778777767777877777777767777877776777787777777776777787777677778777777777677778777777777777777777767777877777777777777777776777787777777777777777777677778777777777777777777767777, -1, [115, 25]⟩,
+⟨95, 0x77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777, -1, [288, 192]⟩,
+⟨287, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨135, 0x777777777777777767777777777777777877777777777777776777777777777777787777777777777777677777777777777778777777777777777767777777777777777, 1, [289, 34]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid567 (i : Fin 12) : (table567[i.val]?.getD default).ok (i.val+567)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table579 : Array Row := #[
+⟨191, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [193, 3]⟩,
+⟨111, 0x777877777877767777767778777778777677777677787777787776777776767777777878777777767677777778787777777676777777787, -1, [290, 116, 20]⟩,
+⟨245, 0x77877767787776778777677877767787776778777677877767787776778777677877767787776778777678777767877776787777678777767877776787777678777767877776787777678777767877776787777687777768777776877777687777768777776877777687777768777776877777687777768777776, -1, [83, 7]⟩,
+⟨95, 0x76678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678, 1, [291, 194, 6]⟩,
+⟨259, 0x6868768686868687686868686876868686868768686868687686868687776868686877768686868777686868687776868686877768686877777686868777776868687777768686877777686868777776868777777768687777777686877777776868777777768687777777687777777776877777777768777777777687777777776, 1, [53, 11]⟩,
+⟨143, 0x77767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, 1, [292, 8]⟩,
+⟨143, 0x77877777677577677777877877877777677677777877877877877777677677777777777777777677677777877877877877777677677777777777777777677677677777777877877, 1, [195, 117, 45]⟩,
+⟨145, 0x6868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [293, 2]⟩,
+⟨292, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨83, 0x77777777777777777777777777767777777777777677777777777777777777777777787777777777777, 1, [294, 196, 84]⟩,
+⟨269, 0x86786868768686876868678686876868687686876868687686868768687686868768687776868768686876868777686876868777686877768687686877768687776877768687776868777687776868777687777768777686877768777776877768777776877777687776877777687777777777687777768777777777768777777777777777776, -1, [31, 19]⟩,
+⟨115, 0x7877876776787787677678778767767877876776787787677678778767766777887776677788777667778877766777887776677788777667778, -1, [295, 118, 10]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid579 (i : Fin 12) : (table579[i.val]?.getD default).ok (i.val+579)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table591 : Array Row := #[
+⟨195, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [197, 3]⟩,
+⟨143, 0x77777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777, 1, [296, 16]⟩,
+⟨295, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨89, 0x77777777677777777777777777877777777877777777777777777677777777677777777777777777877777777, -1, [297, 198, 54]⟩,
+⟨191, 0x88766666788898776666787887665556788998776667899a98765556778876655567889987766677889887766677788777666677788777666667788888777777888887766666777776666677888887777778888877666667777766666778888, 1, [119, 85, 35]⟩,
+⟨147, 0x767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, 1, [298, 4]⟩,
+⟨197, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [199, 3]⟩,
+⟨131, 0x78876788766787667876678876787667887667876788766788778876678876677667887667777788766788777776678877777777887667777777766777777777778, -1, [299, 46, 26]⟩,
+⟨298, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨79, 0x7777777777777777777677777777777777777777777777777777777777787777777777777777777, -1, [300, 200, 120]⟩,
+⟨299, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨125, 0x77767767778778777677677787787776776777877877778767777678777787677776787777876777767877777667777788777776677777887777766777778, 1, [301, 86, 14]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid591 (i : Fin 12) : (table591[i.val]?.getD default).ok (i.val+591)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table603 : Array Row := #[
+⟨197, 0x77777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, 1, [201, 9]⟩,
+⟨149, 0x78767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [302, 4]⟩,
+⟨219, 0x777777777777777777777777777777776777777777777777777777877777777777777777777777777777777677777777777777777777787777777777777777777777777777777777777777777677777777778777777777777777777777777777777777777777777767777777777, 1, [121, 55]⟩,
+⟨99, 0x678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678, -1, [303, 202, 6]⟩,
+⟨302, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨143, 0x77777777777777787777777777777776777777777777777877777777777777767777777777777778777777777777777677777777777777787777777777777776777777777777777, -1, [304, 32]⟩,
+⟨167, 0x88888876555556788888888888876555556788888888888876555556788888877788877665556788888877788877776556777788877788877776556777788877788877776556777788877777777777666777788, 1, [203, 87, 21]⟩,
+⟨119, 0x77876776787787677678778767767877876776787787677678778767767877766777887776677788777667778877766777887776677788777667778, 1, [305, 122, 10]⟩,
+⟨275, 0x67868768687686786876868768678687686876867868768687687686876868768768687686876876868768687687686876877768768687687776876868768777687686876877768768777687776876877768777687687776877768768777687777776877768777777687776877777768777687777776877777777777687777777777768777777777776, 1, [47, 13]⟩,
+⟨95, 0x77777677777777777877777877777777777677777677777777777877777877777777777677777677777777777877777, -1, [306, 204, 36]⟩,
+⟨305, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨152, 0x86868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [307, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid603 (i : Fin 12) : (table603[i.val]?.getD default).ok (i.val+603)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table615 : Array Row := #[
+⟨159, 0x666678999876666666678999876666666678999876667776667899876667776667899876667776667899876667776667899876667776667899876667776667788877777776667788877777776667788, -1, [205, 123, 15]⟩,
+⟨119, 0x77777778777777767776777777787777777677777778777877777777777877787777777677767777777777767776777777777777777777777778777, -1, [308, 88, 56]⟩,
+⟨307, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨101, 0x76678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678, 1, [309, 206, 6]⟩,
+⟨308, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨119, 0x77777877767777767778777778777677777677787777787776777776777877777776767777777878777777767677777778787777777676777777787, 1, [310, 124, 20]⟩,
+⟨197, 0x77777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777, -1, [207, 27]⟩,
+⟨154, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [311, 2]⟩,
+⟨263, 0x68768686876868687686868768686876868687686868768686876868687686868768686876868687686868768687776868777686877768687776868777686877768687776868777686877768687776868777686877768687776877777687777768777776877777687777768777776877777687777768777776877777687777768777776, 1, [89, 7]⟩,
+⟨95, 0x77777777777777767777777677777777777777787777777877777777777777767777777677777777777777787777777, 1, [312, 208, 48]⟩,
+⟨249, 0x777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777787777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777, 1, [125]⟩,
+⟨155, 0x68686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [313, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid615 (i : Fin 12) : (table615[i.val]?.getD default).ok (i.val+615)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table627 : Array Row := #[
+⟨179, 0x87656788876567888876678888766788887656777776567888876678888766788876556777776678888877788888766777776556777776678888877788877666777776667777777788888877777777666777776667777777788, 1, [209, 57, 33]⟩,
+⟨155, 0x76787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, 1, [314, 4]⟩,
+⟨287, 0x87687687686786786876876876867867868768768768768678687687687687686786876876876876876868768768768768768687687687687687687776876876876876877768768768768768777777687687687687777776876876876877777777768768768777777777687687687777777777776876877777777777768768777777777777777687777777777777776, -1, [37, 17]⟩,
+⟨71, 0x77777677777677777777677877677877677877777777877677977677877777777877677, -1, [315, 210, 126, 90]⟩,
+⟨314, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨155, 0x77787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, -1, [316, 8]⟩,
+⟨209, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [211, 3]⟩,
+⟨157, 0x6868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [317, 2]⟩,
+⟨251, 0x68768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, 1, [127, 5]⟩,
+⟨103, 0x7677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787, -1, [318, 212, 12]⟩,
+⟨251, 0x77777777777777777777877777777777777777777777777767777777777777777777787777777777777777777777777776777777777777787777777777777777777777777777777777677777777777778777777777777777777777777777777777767777778777777777777777777777777777777777777777776777777, -1, [91, 49]⟩,
+⟨139, 0x7876678767876788767876787667876788778876787667766787678877887667766776678877887788766776677777887788777776677667777788777777777667777777778, -1, [319, 58, 22]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid627 (i : Fin 12) : (table627[i.val]?.getD default).ok (i.val+627)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table639 : Array Row := #[
+⟨209, 0x77877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, -1, [213, 9]⟩,
+⟨127, 0x7777777777777777777777777777777777777777777777777777777777777776777777777777777777777777777777777777777777777777777777777777777, 1, [320, 128]⟩,
+⟨319, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨105, 0x678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678, -1, [321, 214, 6]⟩,
+⟨320, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨131, 0x76767677787878787878777676767676767778787878787877777776767676777777787878787777777676767677777777777878777777777776767777777777787, -1, [322, 92, 28]⟩,
+⟨167, 0x87656788876678887656788876678887656788876678888766777776678888766777776678888766777776678888766777776678888766777776678888766777776667788877777776667788877777776667788, 1, [215, 129, 15]⟩,
+⟨143, 0x88888888766666666666666667778888888888888877777666666666666777777788888888887777777776666666677777777777888888777777777777766667777777777777778, 1, [323, 38, 34]⟩,
+⟨322, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨107, 0x77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777, -1, [324, 216]⟩,
+⟨289, 0x7678768767876787687678767876876787678768767876787687678767876877687678768776876787687768767876877687678768776876787687768776876877687768768776877687687768776876877687768768776877687777768776877777687768777776877687777768776877777687768777777777687777777776877777777768777777777687777777776, 1, [59, 11]⟩,
+⟨119, 0x77776777777777877778777787777877777777767777677776777767777777778777787777777777777777777677776777777777777777777787777, -1, [325, 130, 50]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid639 (i : Fin 12) : (table639[i.val]?.getD default).ok (i.val+639)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table651 : Array Row := #[
+⟨179, 0x77767887788767776777677767887788767776777677767887788767776777677766777788878776777677766777788878887777666666777788878887777666666777788878887777666666777788877777777777666777788, -1, [217, 93, 21]⟩,
+⟨161, 0x78767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [326, 4]⟩,
+⟨325, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨107, 0x76678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678, 1, [327, 218, 6]⟩,
+⟨259, 0x7767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, 1, [131, 5]⟩,
+⟨159, 0x777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777, 1, [328, 16]⟩,
+⟨215, 0x77777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, 1, [219, 9]⟩,
+⟨137, 0x88766666678888887666666788888876666667888888766667778888777666677788887776666777888877766667778877777667777788777776677777887777766777778, 1, [329, 94, 14]⟩,
+⟨328, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨79, 0x7876787677787579757877767876777777767876777875797677787678777777787678777778767, -1, [330, 220, 132, 60]⟩,
+⟨329, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨164, 0x86868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [331, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid651 (i : Fin 12) : (table651[i.val]?.getD default).ok (i.val+651)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table663 : Array Row := #[
+⟨191, 0x77787778777877776677667766777787778777877787767677877776678777877777787778766777787767677877776667677877777788888877777787767666777776667677877777777788877777788877777777776667666777777777788, 1, [221, 51, 39]⟩,
+⟨163, 0x7778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, -1, [332, 8]⟩,
+⟨215, 0x77665556789aa987666789998765555566777776666789aa998777788887665555566777776666789aa998766677888776655566778887766678999987666667777777666667788888777788888776666677777776666677888887777888887766666777777766666778888, 1, [133, 95, 35]⟩,
+⟨107, 0x77777677677777877877777677677777877877777677677777877877777677677777877877777677677777877877777677677777877, 1, [333, 222, 18]⟩,
+⟨307, 0x7787767787767877677877677877677877678777678776778776778776787776787776787767787767877767877767877767877678777678777678777678777687776787776787776787776877776877767877767877768777768777768777678777687777687777687777687776877776877776877776877777777768777768777768777777777777777687777687777777777777777777776, -1, [29, 23]⟩,
+⟨165, 0x787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [334, 4]⟩,
+⟨221, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [223, 3]⟩,
+⟨131, 0x88766667888876666788887666678888766667888876666788887666678888766667778877766777887776677788777667778877766777887776677788777667778, 1, [335, 134, 10]⟩,
+⟨299, 0x77877678776778776787767787767877677877678776778776787767787767877767877678777678776787776787767877767877678777678776787776787776877767877768777678777687776787776877767877768777678777687777687776877776877768777768777687777687776877776877768777768777777777687777777776877777777768777777777687777777776, -1, [61, 11]⟩,
+⟨95, 0x77777777777777777777777777777776777777777777777677777777777777777777777777777778777777777777777, 1, [336, 224, 96]⟩,
+⟨335, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨167, 0x68686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [337, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid663 (i : Fin 12) : (table663[i.val]?.getD default).ok (i.val+663)=true := by decide +kernel +revert
+
+
+theorem group_3 {n:ℕ} (lo:507≤n) (hi:n≤674) : ∃r:Row,r.ok n=true := by
+  by_cases h507 : n≤518
+  · let i : Fin 12 := ⟨n-507,by omega⟩
+    exact ⟨_,by simpa only [i,show n-507+507=n by omega] using valid507 i⟩
+  by_cases h519 : n≤530
+  · let i : Fin 12 := ⟨n-519,by omega⟩
+    exact ⟨_,by simpa only [i,show n-519+519=n by omega] using valid519 i⟩
+  by_cases h531 : n≤542
+  · let i : Fin 12 := ⟨n-531,by omega⟩
+    exact ⟨_,by simpa only [i,show n-531+531=n by omega] using valid531 i⟩
+  by_cases h543 : n≤554
+  · let i : Fin 12 := ⟨n-543,by omega⟩
+    exact ⟨_,by simpa only [i,show n-543+543=n by omega] using valid543 i⟩
+  by_cases h555 : n≤566
+  · let i : Fin 12 := ⟨n-555,by omega⟩
+    exact ⟨_,by simpa only [i,show n-555+555=n by omega] using valid555 i⟩
+  by_cases h567 : n≤578
+  · let i : Fin 12 := ⟨n-567,by omega⟩
+    exact ⟨_,by simpa only [i,show n-567+567=n by omega] using valid567 i⟩
+  by_cases h579 : n≤590
+  · let i : Fin 12 := ⟨n-579,by omega⟩
+    exact ⟨_,by simpa only [i,show n-579+579=n by omega] using valid579 i⟩
+  by_cases h591 : n≤602
+  · let i : Fin 12 := ⟨n-591,by omega⟩
+    exact ⟨_,by simpa only [i,show n-591+591=n by omega] using valid591 i⟩
+  by_cases h603 : n≤614
+  · let i : Fin 12 := ⟨n-603,by omega⟩
+    exact ⟨_,by simpa only [i,show n-603+603=n by omega] using valid603 i⟩
+  by_cases h615 : n≤626
+  · let i : Fin 12 := ⟨n-615,by omega⟩
+    exact ⟨_,by simpa only [i,show n-615+615=n by omega] using valid615 i⟩
+  by_cases h627 : n≤638
+  · let i : Fin 12 := ⟨n-627,by omega⟩
+    exact ⟨_,by simpa only [i,show n-627+627=n by omega] using valid627 i⟩
+  by_cases h639 : n≤650
+  · let i : Fin 12 := ⟨n-639,by omega⟩
+    exact ⟨_,by simpa only [i,show n-639+639=n by omega] using valid639 i⟩
+  by_cases h651 : n≤662
+  · let i : Fin 12 := ⟨n-651,by omega⟩
+    exact ⟨_,by simpa only [i,show n-651+651=n by omega] using valid651 i⟩
+  by_cases h663 : n≤674
+  · let i : Fin 12 := ⟨n-663,by omega⟩
+    exact ⟨_,by simpa only [i,show n-663+663=n by omega] using valid663 i⟩
+  omega
+
+end Deldor14.Star.Shell963
+
+end
+
+section
+namespace Deldor14.Star.Shell963
+set_option maxHeartbeats 20000000 in
+def table675 : Array Row := #[
+⟨179, 0x77777777777777777777777777777777777777777777877777777777777777777777777777777777777777777777777777777777777777777777777777777777777777677777777777777777777777777777777777777777777, -1, [225, 135]⟩,
+⟨155, 0x77777777777777777777777776777777777777777777777777787777777777777777777777777677777777777777777777777778777777777777777777777777767777777777777777777777777, 1, [338, 52]⟩,
+⟨337, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨111, 0x678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678, -1, [339, 226, 6]⟩,
+⟨287, 0x77877767787776778777677877767787776778777677877767787776778777677877767787776778777677877767787776787777678777767877776787777678777767877776787777678777767877776787777678777767877776787777678777768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776, -1, [97, 7]⟩,
+⟨127, 0x7778777877777776777677767776777777787778777877787777777677767776777677777777777777787778777777777777777677767777777777777778777, 1, [340, 136, 40]⟩,
+⟨225, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [227, 3]⟩,
+⟨149, 0x88887666666666678888888888766666666777888888887776666666677788888877777666666777778888887777766667777777888877777776666777777788777777777667777777778, 1, [341, 62, 22]⟩,
+⟨340, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨107, 0x77777777777677777677777777777877777877777777777677777677777777777877777877777777777677777677777777777877777, 1, [342, 228, 36]⟩,
+⟨271, 0x6876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, 1, [137, 5]⟩,
+⟨146, 0x77777777777777777777777777777777777777777777777787777777777777777777777777777777777777777777777776777777777777777777777777777777777777777777777777, -1, [343, 98]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid675 (i : Fin 12) : (table675[i.val]?.getD default).ok (i.val+675)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table687 : Array Row := #[
+⟨227, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [229, 3]⟩,
+⟨167, 0x77777778777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777, -1, [344, 16]⟩,
+⟨311, 0x77777767777787777776777778777777677777877777767777787777777677778777777767777877777776777787777777677778777777776777877777777677787777777767778777777776777877777777767787777777776778777777777677877777777767787777777777678777777777767877777777776787777777777678777777777776877777777777687777777777768777777777776, 1, [53, 13]⟩,
+⟨87, 0x787786867767676767768687786968778686867768586776868687786968778686867768677777778687786, 1, [345, 230, 138, 30]⟩,
+⟨344, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨171, 0x767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, 1, [346, 4]⟩,
+⟨179, 0x77777777777877777777777877777677677777777677677777877777777777877777777777877777777677777677677677777777777777877877877877877877777777777777677677677777677677677777777777777877877, 1, [231, 99, 63]⟩,
+⟨172, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [347, 2]⟩,
+⟨275, 0x78776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, -1, [139, 5]⟩,
+⟨111, 0x777677777778777877777776777677777778777877777776777677777778777877777776777677777778777877777776777677777778777, -1, [348, 232, 24]⟩,
+⟨319, 0x7687678768767867876876787687678678768767876876787687687678768767876876876787687678768768776876876787687687768768767876876877687687768768768776876877687687687768768776876877777687687768768777776876877687687777768777776876877777687777768768777776877777687777777768777776877777777687777768777777777777777687777777777777776, 1, [41, 17]⟩,
+⟨173, 0x68686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [349, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid687 (i : Fin 12) : (table687[i.val]?.getD default).ok (i.val+687)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table699 : Array Row := #[
+⟨231, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [233, 3]⟩,
+⟨119, 0x77777777787777777778777777777777777777767777777776777777777677777777767777777777777777777777777777777777777778777777777, 1, [350, 140, 100]⟩,
+⟨349, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨107, 0x77777777777777777677777777677777777777777777877777777877777777777777777677777777677777777777777777877777777, 1, [351, 234, 54]⟩,
+⟨323, 0x77777777877777777767777777787777777776777777787777777777677777778777777777767777778777777777776777777877777777777677777877777777777767777787777777777776777787777777777777677778777777777777767778777777777777776777877777777777777677877777777777777767787777777777777776787777777777777777678777777777777777768777777777777777776, -1, [37, 19]⟩,
+⟨159, 0x777777777777777777777777777777787777777777777777777777777777777677777777777777777777777777777778777777777777777777777777777777767777777777777777777777777777777, -1, [352, 64]⟩,
+⟨183, 0x678876667898766678876667898766678876667898766678877777887666678877777887666678877777887666678877777887666678877777887666678877777887666678877777776667788877777776667788877777776667788, -1, [235, 141, 15]⟩,
+⟨175, 0x6868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [353, 2]⟩,
+⟨299, 0x76876787687678768767876876787687678768767876876787687678768767876876787687678768767876876787687678768768776876877687687768768776876877687687768768776876877687687768768776876877687687768768776876877687687777768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776, 1, [101, 7]⟩,
+⟨115, 0x7677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787, -1, [354, 236, 12]⟩,
+⟨353, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨139, 0x7787677678778767767877876776787787677678778767767877876776787787677678777667778877766777887776677788777667778877766777887776677788777667778, 1, [355, 142, 10]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid699 (i : Fin 12) : (table699[i.val]?.getD default).ok (i.val+699)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table711 : Array Row := #[
+⟨233, 0x77777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, 1, [237, 9]⟩,
+⟨175, 0x7776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, 1, [356, 8]⟩,
+⟨329, 0x77767778777677877767778777677787776778777767787776777877767787777677877776778777677877776778777767787777678777767787777677877776787777767877776778777767877777678777776787777678777776787777767877777687777767877777678777776877777768777776787777768777777687777776877777687777776877777768777777777777768777777687777777777777777777776, 1, [31, 23]⟩,
+⟨95, 0x68769678686876958768686785876868678596777768768768686876867777777686786868678687777777868777786, 1, [357, 238, 102, 42]⟩,
+⟨239, 0x77676778787778788878777766666666667788878777878776767787766566778777889998877776666677777778887766677877676778776656677877777888887777777777777777888887777787766566777665667787777788888777777777777777777777777778888877777766555667777778888, 1, [143, 65, 55]⟩,
+⟨177, 0x787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [358, 4]⟩,
+⟨237, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [239, 3]⟩,
+⟨178, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [359, 2]⟩,
+⟨358, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨95, 0x77777777777777777777777677777777777777777777777777777777777777777777777877777777777777777777777, -1, [360, 240, 144]⟩,
+⟨305, 0x68768686876868687686868768686876868687686868768686876868687686868768686876868687686868768686876868687686877768687776868777686877768687776868777686877768687776868777686877768687776868777686877768687776868777687777768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776, 1, [103, 7]⟩,
+⟨170, 0x77777777777777777787777777777777777776777777777777777777877777777777777777767777777777777777778777777777777777777677777777777777777787777777777777777776777777777777777777, -1, [361, 38]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid711 (i : Fin 12) : (table711[i.val]?.getD default).ok (i.val+711)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table723 : Array Row := #[
+⟨239, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [241, 3]⟩,
+⟨179, 0x76787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, 1, [362, 4]⟩,
+⟨279, 0x777777777877777777777777677777777787777777777777767777777778777777777777776777777777877777777777777677777777787777777777777767777777778777777777777776777787777777777777777777677778777777777777777777767777877777777777777777776777787777777777777777777677778777777777777777777767777, -1, [145, 25]⟩,
+⟨109, 0x7777777777677777777777777777777787777777777877777777777777777777767777777777677777777777777777777787777777777, -1, [363, 242, 66]⟩,
+⟨362, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨143, 0x77777777777677777777777777787777777777787777777777777776777777787777777777777777777877777776777777777777777777767776777777777777777777777778777, -1, [364, 104, 56]⟩,
+⟨242, 0x77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777, 1, [243]⟩,
+⟨143, 0x67888876666788887666678888766667888876666788887666678888766667888876666788777667778877766777887776677788777667778877766777887776677788777667778, -1, [365, 146, 10]⟩,
+⟨335, 0x77787777677787776777877776777877767778777767778777767787777677787777677877776777877776778777776778777767787777767787777677877777677877777678777776778777776787777767787777767877777767877777678777777678777776787777776787777776877777767877777768777777678777777687777777687777776877777776877777768777777768777777777777777687777777777777776, -1, [43, 17]⟩,
+⟨119, 0x77767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787, 1, [366, 244, 12]⟩,
+⟨365, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨182, 0x86868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [367, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid723 (i : Fin 12) : (table723[i.val]?.getD default).ok (i.val+723)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table735 : Array Row := #[
+⟨167, 0x77777777777776777777777777767777777777777777777787777778777777877777787777778777777877777777777777777777677777767777775777777677777767777777777777777777787777778777777, -1, [245, 147, 105]⟩,
+⟨175, 0x7777777777777778777777777777777677777777777777787777777777777776777777777777777877777777777777767777777777777778777777777777777677777777777777787777777777777776777777777777777, -1, [368, 32]⟩,
+⟨329, 0x77777677778777776777787777767777877777677778777776777787777767777877777767778777777677787777776777877777767778777777677787777776777877777776778777777767787777777677877777776778777777767787777777677877777777678777777776787777777767877777777678777777776787777777767877777777768777777777687777777776877777777768777777777687777777776, 1, [67, 11]⟩,
+⟨119, 0x77677777877877777677677777877877777677677777877877777677677777877877777677677777877877777677677777877877777677677777877, -1, [369, 246, 18]⟩,
+⟨368, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨143, 0x78787776767676777878787877767676767778787878777676767677787878787776767676777777787877777776767777777878777777767677777778787777777676777777787, 1, [370, 148, 20]⟩,
+⟨215, 0x77777767777887777788777767777776777777677777767776777777788777878777887777777677766667776777777788777878776777777777677877667887777777788766778776777777777677877666777777777788877778887777777777666777666777777777788, -1, [247, 57, 39]⟩,
+⟨155, 0x78766787678876787667876788767876678767887678766787678877887667766788778876677667887788766776678877887667766777778877777667777788777776677777887777766777778, -1, [371, 106, 14]⟩,
+⟨370, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨119, 0x77777776777677777778777877777776777677777778777877777776777677777778777877777776777677777778777877777776777677777778777, 1, [372, 248, 24]⟩,
+⟨295, 0x7877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, -1, [149, 5]⟩,
+⟨185, 0x68686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [373, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid735 (i : Fin 12) : (table735[i.val]?.getD default).ok (i.val+735)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table747 : Array Row := #[
+⟨245, 0x77877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, -1, [249, 9]⟩,
+⟨159, 0x777776777776777877777877777877777877767777777877767777767778777777767778777777767677777778777677777778787777777778787777777676777777777676777777777777777777787, -1, [374, 68, 44]⟩,
+⟨317, 0x86876868687686868768686876868687686868768686876868687686868768686876868687686868768686876868687686868768686877768687776868777686877768687776868777686877768687776868777686877768687776868777686877768687776868777686877777687777768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776, -1, [107, 7]⟩,
+⟨99, 0x777777777777777777777777677777777777777777777777777777777777777777777777778777777777777777777777777, -1, [375, 250, 150]⟩,
+⟨374, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨183, 0x777777787777777677777778777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777, -1, [376, 16]⟩,
+⟨249, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [251, 3]⟩,
+⟨167, 0x76678876788767887667876678766788766787678876678876787667887667887788766788766776678876678877777667887667777788766788777777778876677777777667887777777777766777777777778, 1, [377, 58, 26]⟩,
+⟨299, 0x77678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, 1, [151, 5]⟩,
+⟨107, 0x77777777777777777777777777777777777677777777777777777677777777777777777777777777777777777877777777777777777, 1, [378, 252, 108]⟩,
+⟨377, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨188, 0x86868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [379, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid747 (i : Fin 12) : (table747[i.val]?.getD default).ok (i.val+747)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table759 : Array Row := #[
+⟨219, 0x666666666678999999999876666666667776666666667899999999876666666667776666666667788999999877776666667777776666667777899999877776666667777776666667777788999877777776667777777776667777777899877777776667777777776667777777788, -1, [253, 69, 33]⟩,
+⟨143, 0x77777778777777777778777777767777777777767777777877777777777877777776777777777776777677777777777777787778777777777777777677767777777777777778777, -1, [380, 152, 40]⟩,
+⟨379, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨125, 0x76678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678, 1, [381, 254, 6]⟩,
+⟨323, 0x78768767876876787687678768767876876787687678768767876876787687678768767876876787687678768767876876787687678768776876877687687768768776876877687687768768776876877687687768768776876877687687768768776876877687687768768776877777687777768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776, -1, [109, 7]⟩,
+⟨189, 0x787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [382, 4]⟩,
+⟨191, 0x77677777877877777677677677777877977877777677677677777877877777777777777777877877777677677677677777877877777777777777777877877777677677677677777877877777777777777777777777677677677777777877877, -1, [255, 153, 45]⟩,
+⟨190, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [383, 2]⟩,
+⟨347, 0x77877767787767787776778776778777677877677877767787767787776778777678777677877767877767787776787776778777678777677877767877776787776787777678777678777767877767877776787776787777678777768777767877776877776787777687777678777768777767877776877777687777687777768777768777776877776877777687777687777768777777777776877777777777687777777777768777777777776, -1, [59, 13]⟩,
+⟨127, 0x7777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777, -1, [384, 256]⟩,
+⟨383, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨119, 0xa5967869595968768696777868686876869586877768695867868586867768595867768685868677686867777777777778686877868696868778686, -3, [385, 154, 110, 70]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid759 (i : Fin 12) : (table759[i.val]?.getD default).ok (i.val+759)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table771 : Array Row := #[
+⟨255, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [257, 3]⟩,
+⟨191, 0x76787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, 1, [386, 4]⟩,
+⟨385, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨125, 0x77777677677777877877777677677777877877777677677777877877777677677777877877777677677777877877777677677777877877777677677777877, 1, [387, 258, 18]⟩,
+⟨299, 0x77777777777777677777777787777777777777767777777778777777777777776777777777877777777777777677777777787777777777777767777777778777777777777776777777777877777777777777777776777787777777777777777777677778777777777777777777767777877777777777777777776777787777777777777777777677778777777777777777777767777, 1, [155, 25]⟩,
+⟨191, 0x77767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, 1, [388, 8]⟩,
+⟨215, 0x78787877666666778787878787877666666778787878787877666666778787878787877666666777677878898877666666777677878898877666777777666778898877666777777666778898877666777777666778898877666777777666777788877777777777666777788, 1, [259, 111, 21]⟩,
+⟨193, 0x6868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [389, 2]⟩,
+⟨359, 0x76876876876786786787687687687678678678768768768768767867876876876876876786787687687687687687678768768768768768767876876876876876876877687687687687687687768768768768768768777776876876876876877777687687687687687777777768768768768777777776876876876877777777777687687687777777777768768768777777777777776876877777777777777687687777777777777777768777777777777777776, 1, [41, 19]⟩,
+⟨95, 0x76777875787776787677787677787678767778767777777777767877767876787776787777777777787678777778767, 1, [390, 260, 156, 60]⟩,
+⟨349, 0x7767877677877678776778776787767787767877677877678776778776787767787767877678777678776787776787767877767877678777678776787776787767877767877678777687776787776877767877768777678777687776787776877767877768777678777687776877776877768777768777687777687776877776877768777768777687777687776877777777768777777777687777777776877777777768777777777687777777776, 1, [71, 11]⟩,
+⟨175, 0x7787787787677677677677677678777678778778778767778767778767767877767877767877766777876777876777887777887776787776677776677776677788777788777788777777777667777667777777777777778, 1, [391, 46, 34]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid771 (i : Fin 12) : (table771[i.val]?.getD default).ok (i.val+771)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table783 : Array Row := #[
+⟨251, 0x77777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777, -1, [261, 27]⟩,
+⟨167, 0x77777777777777777777777777777777777777777777777777777778777777777777777777777777777777777777777777777777777777767777777777777777777777777777777777777777777777777777777, -1, [392, 112]⟩,
+⟨311, 0x68768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, 1, [157, 5]⟩,
+⟨129, 0x678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678, -1, [393, 262, 6]⟩,
+⟨392, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨195, 0x767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, 1, [394, 4]⟩,
+⟨261, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [263, 3]⟩,
+⟨155, 0x78778767767877876776787787677678778767767877876776787787677678778767767877876776677788777667778877766777887776677788777667778877766777887776677788777667778, -1, [395, 158, 10]⟩,
+⟨335, 0x77767787776778777677877767787776778777677877767787776778777677877767787776778777677877767787776778777677877767787777678777767877776787777678777767877776787777678777767877776787777678777767877776787777678777767877776787777678777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776, 1, [113, 7]⟩,
+⟨119, 0x77777777777677777777777777777777777877777777777877777777777777777777777677777777777677777777777777777777777877777777777, -1, [396, 264, 72]⟩,
+⟨359, 0x76787767876787678776787678767877678767876787767876787678776787678776877678767877687767876787768776787678776877678767877687767877687768776787768776877678776877687767877687768776787768776877768776877687776877687768777687768776877768776877687776877687777777687768777777768776877777776877687777777687768777777768777777777776877777777777687777777777768777777777776, 1, [61, 13]⟩,
+⟨197, 0x68686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [397, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid783 (i : Fin 12) : (table783[i.val]?.getD default).ok (i.val+783)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table795 : Array Row := #[
+⟨207, 0x787766667787878787766667787878787766667787878787766667788988776666667788988776666667788988776666667788988776666667788988776666667788988776666667788988776666667788877777776667788877777776667788877777776667788, 1, [265, 159, 15]⟩,
+⟨197, 0x78767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [398, 4]⟩,
+⟨397, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨107, 0x78678768768777867867876876786786777687687677768768677777867867786786777777777687687768768777777777868777786, -1, [399, 266, 114, 42]⟩,
+⟨367, 0x7876787767876787678767877678767876787678776787678767877687767876787678776877678767876787768776787678776877687767876787768776877678767877687768776787768776877687767877687768776877678776877687768777687768776877687776877687768776877768776877687777777687768776877777776877687768777777768776877777777777687768777777777776877687777777777768777777777777777687777777777777776, -1, [47, 17]⟩,
+⟨159, 0x777777777777777777777777777777777777777777777777777777777777777777777777777777767777777777777777777777777777777777777777777777777777777777777777777777777777777, 1, [400, 160]⟩,
+⟨263, 0x77877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, -1, [267, 9]⟩,
+⟨199, 0x6868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [401, 2]⟩,
+⟨359, 0x78768767876787687678767876876787678768767876787687678767876876787678768767876877687678768776876787687768767876877687678768776876787687768767876877687687768776876877687768768776877687687768776876877687768768776877687687768777776877687777768776877777687768777776877687777768776877777687768777776877777777768777777777687777777776877777777768777777777687777777776, -1, [73, 11]⟩,
+⟨131, 0x77767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787, 1, [402, 268, 12]⟩,
+⟨263, 0x88988765556788887777776655567889887778787766677888877777777666677787777787877666778888777777776666777876666778887777788887777788877666667666667788877666778888888888776666677777777777666667788888888887766666777777777776666677888888888877666667777777777766666778888, 1, [161, 115, 35]⟩,
+⟨179, 0x67888876667888766667888766678888766667887666678888766788887666678877766788887667778876666788777667778876677788777667887776677788777777887776677777766777887777777777766777777777778, -1, [403, 62, 26]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid795 (i : Fin 12) : (table795[i.val]?.getD default).ok (i.val+795)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table807 : Array Row := #[
+⟨267, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [269, 3]⟩,
+⟨199, 0x7776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, 1, [404, 8]⟩,
+⟨403, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨107, 0x77777777777777777777777777677777777777777777777777777777777777777777777777777777877777777777777777777777777, -1, [405, 270, 162]⟩,
+⟨404, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨167, 0x77777776777776777777787777787777777677777677777778777778777777777877767777777776777877777777787776777777777677787777777777767677777777777878777777777776767777777777787, 1, [406, 116, 28]⟩,
+⟨269, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [271, 3]⟩,
+⟨179, 0x76787667876787678876787678766787678767887788767876677667876788778876787667766776678877887788766776677667887788778877777667766777778877887777766776677777777788777777777667777777778, 1, [407, 74, 22]⟩,
+⟨323, 0x87686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, -1, [163, 5]⟩,
+⟨127, 0x7777777677777777777777787777777877777777777777767777777677777777777777787777777877777777777777767777777677777777777777787777777, -1, [408, 272, 48]⟩,
+⟨377, 0x78776787767876778767877678776787677876787767877678776787678776787767877678767877678776787767877687767877678776787768776787767877678776877768776787767877687776877678776787768777687776877678776877768777687767877687776877768777687768777687776877768776877768777687776877777776877768777687777777687776877768777777777777687776877777777777768777687777777777777777768777777777777777776, -1, [43, 19]⟩,
+⟨203, 0x68686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [409, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid807 (i : Fin 12) : (table807[i.val]?.getD default).ok (i.val+807)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table819 : Array Row := #[
+⟨215, 0x77677677677677677777877977977977977977877777677677677677677677677677677677677677777877977977977877877777777677677677777777777677677677777777777777877977977877777777777777677677677777777777677677677777777777777877877, -1, [273, 117, 63]⟩,
+⟨159, 0x777778777677777677787777787776777776777877777877767777767778777778777677777677787777777676777777787877777776767777777878777777767677777778787777777676777777787, 1, [410, 164, 20]⟩,
+⟨409, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨135, 0x678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678, -1, [411, 274, 6]⟩,
+⟨410, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨203, 0x77787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, -1, [412, 8]⟩,
+⟨199, 0x7777677776777767777677777777787777977779777797777877777777767777677776777777777777777777767777677776777777777877779777797777877777777767777677776777777777777777777767777677776777777777777778777787777, -1, [275, 165, 75]⟩,
+⟨173, 0x76678767887678766787678876787667876788767876678767887678766788778876677667887788766776678877887667766788778876677667887777766777778877777667777788777776677777887777766777778, 1, [413, 118, 14]⟩,
+⟨412, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨131, 0x77777677777777777877777877777777777677777677777777777877777877777777777677777677777777777877777877777777777677777677777777777877777, -1, [414, 276, 36]⟩,
+⟨413, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨163, 0x6788887666678888766667888876666788887666678888766667888876666788887666678888766667887776677788777667778877766777887776677788777667778877766777887776677788777667778, -1, [415, 166, 10]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid819 (i : Fin 12) : (table819[i.val]?.getD default).ok (i.val+819)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table831 : Array Row := #[
+⟨275, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [277, 3]⟩,
+⟨191, 0x77777777777777777777777777777776777777777777777777777777777777787777777777777777777777777777777677777777777777777777777777777778777777777777777777777777777777767777777777777777777777777777777, 1, [416, 64]⟩,
+⟨335, 0x77777777777776777777877777777777776777777777777787777777777777677777787777777777777677777777777778777777777777767777778777777777777767777778777777777777777777776777777877777777777776777777877777777777777777777677777787777777777777677777787777777777777777777777777777777777777777767777778777777777777777777777777777777777777777776777777, 1, [119, 49]⟩,
+⟨137, 0x76678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678, 1, [417, 278, 6]⟩,
+⟨331, 0x6876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, 1, [167, 5]⟩,
+⟨179, 0x78777676767778787776767677787878777676777878787877767677787877767676767778787776767777777878777676777878777777767677787877777777777778787776767777777777777676777777777777777777787, 1, [418, 76, 44]⟩,
+⟨269, 0x77777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777877777777777777777677777777, 1, [279, 27]⟩,
+⟨208, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [419, 2]⟩,
+⟨418, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨95, 0x77777776777777767777777777767778777677787776777877777777777877767779777677787777777777787776777, -1, [420, 280, 168, 120]⟩,
+⟨405, 0x777777777777777777777777777787777777777777777777777777777877777777777777777777777777778777777777777777777777777777787777777777777777777777777777877777777777777777777777777778777777777777777777777777777787777777777777777777777777777877777777777777777777777777778777777777777777777777777777787777777777777777777777777777877777777777777777777777777778777777777777777777777777777787777777777777777777777777777, 1, [29]⟩,
+⟨209, 0x68686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [421, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid831 (i : Fin 12) : (table831[i.val]?.getD default).ok (i.val+831)=true := by decide +kernel +revert
+
+
+theorem group_4 {n:ℕ} (lo:675≤n) (hi:n≤842) : ∃r:Row,r.ok n=true := by
+  by_cases h675 : n≤686
+  · let i : Fin 12 := ⟨n-675,by omega⟩
+    exact ⟨_,by simpa only [i,show n-675+675=n by omega] using valid675 i⟩
+  by_cases h687 : n≤698
+  · let i : Fin 12 := ⟨n-687,by omega⟩
+    exact ⟨_,by simpa only [i,show n-687+687=n by omega] using valid687 i⟩
+  by_cases h699 : n≤710
+  · let i : Fin 12 := ⟨n-699,by omega⟩
+    exact ⟨_,by simpa only [i,show n-699+699=n by omega] using valid699 i⟩
+  by_cases h711 : n≤722
+  · let i : Fin 12 := ⟨n-711,by omega⟩
+    exact ⟨_,by simpa only [i,show n-711+711=n by omega] using valid711 i⟩
+  by_cases h723 : n≤734
+  · let i : Fin 12 := ⟨n-723,by omega⟩
+    exact ⟨_,by simpa only [i,show n-723+723=n by omega] using valid723 i⟩
+  by_cases h735 : n≤746
+  · let i : Fin 12 := ⟨n-735,by omega⟩
+    exact ⟨_,by simpa only [i,show n-735+735=n by omega] using valid735 i⟩
+  by_cases h747 : n≤758
+  · let i : Fin 12 := ⟨n-747,by omega⟩
+    exact ⟨_,by simpa only [i,show n-747+747=n by omega] using valid747 i⟩
+  by_cases h759 : n≤770
+  · let i : Fin 12 := ⟨n-759,by omega⟩
+    exact ⟨_,by simpa only [i,show n-759+759=n by omega] using valid759 i⟩
+  by_cases h771 : n≤782
+  · let i : Fin 12 := ⟨n-771,by omega⟩
+    exact ⟨_,by simpa only [i,show n-771+771=n by omega] using valid771 i⟩
+  by_cases h783 : n≤794
+  · let i : Fin 12 := ⟨n-783,by omega⟩
+    exact ⟨_,by simpa only [i,show n-783+783=n by omega] using valid783 i⟩
+  by_cases h795 : n≤806
+  · let i : Fin 12 := ⟨n-795,by omega⟩
+    exact ⟨_,by simpa only [i,show n-795+795=n by omega] using valid795 i⟩
+  by_cases h807 : n≤818
+  · let i : Fin 12 := ⟨n-807,by omega⟩
+    exact ⟨_,by simpa only [i,show n-807+807=n by omega] using valid807 i⟩
+  by_cases h819 : n≤830
+  · let i : Fin 12 := ⟨n-819,by omega⟩
+    exact ⟨_,by simpa only [i,show n-819+819=n by omega] using valid819 i⟩
+  by_cases h831 : n≤842
+  · let i : Fin 12 := ⟨n-831,by omega⟩
+    exact ⟨_,by simpa only [i,show n-831+831=n by omega] using valid831 i⟩
+  omega
+
+end Deldor14.Star.Shell963
+
+end
+
+section
+namespace Deldor14.Star.Shell963
+set_option maxHeartbeats 20000000 in
+def table843 : Array Row := #[
+⟨279, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [281, 3]⟩,
+⟨209, 0x78767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [422, 4]⟩,
+⟨311, 0x77777777777787777777777777777777777777677777777777787777777777776777777777777877777777777777777777777776777777777777877777777777767777777777778777777777777777777777777767777777777778777777777777777777777777777777777777777777777777777677777777777787777777777777777777777777777777777777777777777777776777777777777, -1, [169, 65]⟩,
+⟨137, 0x77677777877877777677677777877877777677677777877877777677677777877877777677677777877877777677677777877877777677677777877877777677677777877, -1, [423, 282, 18]⟩,
+⟨329, 0x77777777777777777777787777777777777777777776777777777787777777777777777777776777777777777777777777877777777777777777777767777777777877777777777777777777777777777777677777777778777777777777777777777677777777778777777777777777777777777777777776777777777787777777777777777777777777777777777777777777777777777777777777777767777777777, -1, [121, 77]⟩,
+⟨207, 0x777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777, 1, [424, 16]⟩,
+⟨281, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [283, 3]⟩,
+⟨159, 0x777787777877777777767777677776777767777777778777787777877778777777777677776777767777677777777777777777778777787777777777777777777677776777777777777777777787777, 1, [425, 170, 50]⟩,
+⟨395, 0x76778767877678767877678767787678776787678776787767876787767876787767877678767877678776877678776787678776787768776787767877687767877687767877678776877678776877768776787768776787768777687767877687776877687776877678776877768776877768777687768777687768777687776877687776877777776877768776877768777777768777687777777687777777687776877777776877777777777768777777768777777777777687777777777777777777776, 1, [37, 23]⟩,
+⟨139, 0x7677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787, -1, [426, 284, 12]⟩,
+⟨425, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨179, 0x88766666678888887666666788888876666667888888766666678888887666677788887776666777888877766667778888777666677788887776666777887777766777778877777667777788777776677777887777766777778, 1, [427, 122, 14]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid843 (i : Fin 12) : (table843[i.val]?.getD default).ok (i.val+843)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table855 : Array Row := #[
+⟨215, 0x77877877877777677577577577677777877877877877877877877877777677577577677777877877877777777777877877877777677577577677777877877877777777777877877877777677577577677777877877877777777777777777777777677677677777777877877, 1, [285, 171, 45]⟩,
+⟨211, 0x7778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, -1, [428, 8]⟩,
+⟨427, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨119, 0x76767676767768686868686877878787869687878787786877786868677768677685867685867768677768677777786877777777869687777777786, -1, [429, 286, 78, 66]⟩,
+⟨428, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨167, 0x76777878787877767676767778787878777676767677787878787776767676777878787877767676767778787777777676777777787877777776767777777878777777767677777778787777777676777777787, -1, [430, 172, 20]⟩,
+⟨239, 0x77777887777767777777677777887777767777777677777887777767777777677777887777767777777677766787778877777777677766787778877777777677877787767777777777677877787767777777777677877787767777777777677877787767777777777666777788877777777777666777788, -1, [287, 123, 21]⟩,
+⟨214, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [431, 2]⟩,
+⟨430, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨143, 0x77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777, -1, [432, 288]⟩,
+⟨343, 0x8768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, -1, [173, 5]⟩,
+⟨215, 0x68686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [433, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid855 (i : Fin 12) : (table855[i.val]?.getD default).ok (i.val+855)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table867 : Array Row := #[
+⟨271, 0x7777777777777777877777777777777777777777777777777767777777777777777877777777777777777777777777777777767777777777777777877777777777777777777777777777777767777777777777777877777777777777777777777777777777767777777777777777877777777777777777777777777777777767777777777777777, -1, [289, 51]⟩,
+⟨179, 0x77767677787776777878777677787776767778777677787877767778777676777878777778787776767777767677787877777878777676777776767778787777777777767677777777777878777777777776767777777777787, 1, [434, 124, 28]⟩,
+⟨389, 0x86868768686868687686868686876868686868768686868687686868686876868686868768686868687776868686877768686868777686868687776868686877768686868777686868687776868686877777686868777776868687777768686877777686868777776868687777768686877777686868777777768687777777686877777776868777777768687777777686877777776868777777768687777777776877777777768777777777687777777776877777777768777777777687777777776, -1, [79, 11]⟩,
+⟨111, 0x777677776877778777877778677776776767767777778778787787777776776767767777778778787787777776867768677777778687786, -1, [435, 290, 174, 30]⟩,
+⟨395, 0x68686876868686868687686868686868768686868686876868686868687686868686868777686868686877768686868687776868686868777686868686877768686868687777768686868777776868686877777686868687777768686868777776868686877777776868687777777686868777777768686877777776868687777777686868777777777686877777777768687777777776868777777777686877777777768687777777777768777777777776877777777777687777777777768777777777776, 1, [67, 13]⟩,
+⟨215, 0x77767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, 1, [436, 8]⟩,
+⟨287, 0x77777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, 1, [291, 9]⟩,
+⟨197, 0x76787678766787678767876787678877887678767876787667766776678767876788778877887788767876677667766776677667887788778877887788777776677667766776677777777788778877887777777777777667766777777777777777778, 1, [437, 46, 38]⟩,
+⟨299, 0x77777777777777777777777767777777777777777777777778777777777777777777777777777777777777777777777777767777777777777777777777778777777777777777777777777677777777777777777777777787777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777776777777777777777777777777, 1, [175, 125]⟩,
+⟨143, 0x77767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787, 1, [438, 292, 12]⟩,
+⟨437, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨218, 0x86868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [439, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid867 (i : Fin 12) : (table867[i.val]?.getD default).ok (i.val+867)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table879 : Array Row := #[
+⟨291, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [293, 3]⟩,
+⟨159, 0x777777777777777777777778777777777777777677777777777777777777777677777777777777787777777777777777777777777777777677777776777777777777777777777777777777787777777, 1, [440, 176, 80]⟩,
+⟨439, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨125, 0x77777777777777777777777777777777777777777677777777777777777777677777777777777777777777777777777777777777877777777777777777777, 1, [441, 294, 126]⟩,
+⟨440, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨191, 0x77787776777877777877767778777677787776777776767777767778777677787777787877777878777778777677777676777776767777767677777778787777787877777878777777777777777676777776767777777777777777777777787, -1, [442, 68, 52]⟩,
+⟨231, 0x777677778877776777677778877776777677778877776777677778877776778787767777776778787767777776778787767777776778787767777776778787767777776778787767777776778787767777776778787767777776667788877777776667788877777776667788877777776667788, -1, [295, 177, 15]⟩,
+⟨220, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [443, 2]⟩,
+⟨442, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨143, 0x77777776777677777778777877777776777677777778777877777776777677777778777877777776777677777778777877777776777677777778777877777776777677777778777, 1, [444, 296, 24]⟩,
+⟨377, 0x77767787776778777677877767787776778777677877767787776778777677877767787776778777677877767787776778777677877767787776778777677877776787777678777767877776787777678777767877776787777678777767877776787777678777767877776787777678777767877776787777678777767877777687777768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776, 1, [127, 7]⟩,
+⟨175, 0x7877876776787787677678778767767877876776787787677678778767767877876776787787677678778767766777887776677788777667778877766777887776677788777667778877766777887776677788777667778, -1, [445, 178, 10]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid879 (i : Fin 12) : (table879[i.val]?.getD default).ok (i.val+879)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table891 : Array Row := #[
+⟨269, 0x77777777777777777777777777877777777777777777777777777777777777777777777777777777677777777777777777777777777877777777777777777777777777777777777777777777777777777677777777777777777777777777877777777777777777777777777777777777777777777777777777677777777777777777777777777, -1, [297, 81]⟩,
+⟨221, 0x78767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [446, 4]⟩,
+⟨413, 0x77776777877776777787777677787777677778777767778777767778777776777877776777877777677787777677787777767787777767778777776778777776777877777677877777677877777767787777767787777776778777776778777777678777777677877777767877777767787777776787777776787777777678777777678777777767877777767877777776877777776787777777687777777678777777768777777768777777776877777776877777777687777777687777777777777777768777777777777777776, 1, [47, 19]⟩,
+⟨147, 0x678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678, -1, [447, 298, 6]⟩,
+⟨355, 0x7877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, -1, [179, 5]⟩,
+⟨191, 0x77777777777777777777777777777777777777777777777777777777777777787777777777777777777777777777777777777777777777777777777777777776777777777777777777777777777777777777777777777777777777777777777, -1, [448, 128]⟩,
+⟨263, 0x88765678888876567888876556788887656788888765678888876567877776556788888766788888876678888876556777776556788888766788888876678877776556777777666788888877788888876667777776556777777666788888877788877776667777777666777777777788888877777777776667777777666777777777788, 1, [299, 69, 39]⟩,
+⟨223, 0x6868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [449, 2]⟩,
+⟨419, 0x68686868686868768686868686868686868686868687776868686868686868686868686877777686868686868686868686868777777768686868686868686868687777777776868686868686868686877777777777686868686868686868777777777777768686868686868687777777777777776868686868686877777777777777777686868686868777777777777777777768686868687777777777777777777776868686877777777777777777777777686868777777777777777777777777768687777777777777777777777777776, 1, [31, 29]⟩,
+⟨119, 0x77777777777777777777777777777677777777777777777777777777777777777777777777777777777777777877777777777777777777777777777, -1, [450, 300, 180]⟩,
+⟨415, 0x6868686876868686868686868768686868686868687686868686868686877768686868686868777686868686868687776868686868686877777686868686868777776868686868687777768686868686877777776868686868777777768686868687777777686868686877777777768686868777777777686868687777777776868686877777777777686868777777777776868687777777777768686877777777777776868777777777777768687777777777777686877777777777777768777777777777777687777777777777776, 1, [53, 17]⟩,
+⟨199, 0x8766678876667888766788876667887666788876678888766788766667887667888876678876666788766777887667887776678876677788766788777667887777778876677777766788777777887667777776677777777788777777777667777777778, 1, [451, 82, 22]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid891 (i : Fin 12) : (table891[i.val]?.getD default).ok (i.val+891)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table903 : Array Row := #[
+⟨251, 0x77777778777776677777877777778777776677777877777778777776677777877777778777776677777877777777667776788777877777777667776788777877777777778776777677877777777778776777677877777777778776777677877777777778776777677877777777777666777788877777777777666777788, 1, [301, 129, 21]⟩,
+⟨223, 0x7776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777877767778777677787776777, 1, [452, 8]⟩,
+⟨359, 0x77678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, 1, [181, 5]⟩,
+⟨149, 0x76678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678, 1, [453, 302, 6]⟩,
+⟨452, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨225, 0x787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [454, 4]⟩,
+⟨299, 0x77877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, -1, [303, 9]⟩,
+⟨143, 0x96868787777869595968677786858687767687776777867769595868777686959586877768686867777768686776868676868677686867777777777868687786868786868778686, -1, [455, 182, 130, 70]⟩,
+⟨454, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨143, 0x77777777777777767777777677777777777777787777777877777777777777767777777677777777777777787777777877777777777777767777777677777777777777787777777, 1, [456, 304, 48]⟩,
+⟨409, 0x7787767877677877678776778776787767787767877677877678776778776787767787767877677877678777678776787776787767877767877678777678776787776787767877767877678777678776787776787776877767877768777678777687776787776877767877768777678777687776787776877767877768777768777687777687776877776877768777768777687777687776877776877768777768777687777687777777776877777777768777777777687777777776877777777768777777777687777777776, -1, [83, 11]⟩,
+⟨227, 0x68686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [457, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid903 (i : Fin 12) : (table903[i.val]?.getD default).ok (i.val+903)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table915 : Array Row := #[
+⟨239, 0x77776677778777877776677778777877776677778777877776677778777877777787767677877777787767677877777787767677877777787767677877777787767677877777787767677877777787767677877777787767677877777776667788877777776667788877777776667788877777776667788, 1, [305, 183, 15]⟩,
+⟨227, 0x76787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, 1, [458, 4]⟩,
+⟨389, 0x68768686876868687686868768686876868687686868768686876868687686868768686876868687686868768686876868687686868768686876868687686868768687776868777686877768687776868777686877768687776868777686877768687776868777686877768687776868777686877768687776868777686877768687776877777687777768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776, 1, [131, 7]⟩,
+⟨143, 0x77777777677777777777777777877777777877777777777777777677777777677777777777777777877777777877777777777777777677777777677777777777777777877777777, -1, [459, 306, 54]⟩,
+⟨458, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨175, 0x7776777777787778777877787777777677767776777677777778777877787778777777767776777677767777777877787777777777777776777677777777777777787778777777777777777677767777777777777778777, -1, [460, 184, 40]⟩,
+⟨305, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [307, 3]⟩,
+⟨229, 0x6868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, 1, [461, 2]⟩,
+⟨419, 0x77677877767787767787776778776778777677877677877767787767787776778776778777678777677877767877767787776787776778777678777677877767877767787776787776787777678777678777767877767877776787776787777678777678777767877767877776877776787777687777678777768777767877776877776787777687777678777768777768777776877776877777687777687777768777768777776877776877777687777687777777777768777777777776877777777777687777777777768777777777776, 1, [71, 13]⟩,
+⟨119, 0x77777778777777787776787777767877767777777677777776777776777678767777777776787678767877777777787678777876787777777778767, 1, [462, 308, 132, 84]⟩,
+⟨359, 0x77776777787777777776777787777677778777777777677778777767777877777777767777877776777787777777776777787777677778777777777677778777767777877777777767777877776777787777777776777787777677778777777777777777777767777877777777777777777776777787777777777777777777677778777777777777777777767777877777777777777777776777787777777777777777777677778777777777777777777767777, 1, [185, 25]⟩,
+⟨230, 0x86868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [463, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid915 (i : Fin 12) : (table915[i.val]?.getD default).ok (i.val+915)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table927 : Array Row := #[
+⟨305, 0x77777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, 1, [309, 9]⟩,
+⟨223, 0x7777777777777776777777777777777877777777777777767777777777777778777777777777777677777777777777787777777777777776777777777777777877777777777777767777777777777778777777777777777677777777777777787777777777777776777777777777777, 1, [464, 32]⟩,
+⟨463, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨119, 0x77778677776777677776877778777877777767767677677777787787877877777767767677677777787787877877777776867768677777778687786, 1, [465, 310, 186, 30]⟩,
+⟨377, 0x77777767777778777777777777767777778777777677777787777776777777877777777777776777777877777767777778777777677777787777777777777677777787777776777777877777777777777777777777777767777778777777677777787777777777777777777777777776777777877777767777778777777777777777777777777777677777787777777777777777777777777777777777777777767777778777777777777777777777777777777777777777776777777, 1, [133, 49]⟩,
+⟨231, 0x767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, 1, [466, 4]⟩,
+⟨309, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [311, 3]⟩,
+⟨232, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [467, 2]⟩,
+⟨319, 0x6555678888889999988877765544555666788999998888887655566655567888888999887777776555566666678899999888888776667665556677778899988777777655556666667889999988877766666766666777777889998877777766666766666777888998887776666676666677777788999887777776666676666677777788888777777777777777777777788888777777666667666667777778888, -1, [187, 85, 55]⟩,
+⟨143, 0x77777777777777777777777677777777777677777777777777777777777877777777777877777777777777777777777677777777777677777777777777777777777877777777777, 1, [468, 312, 72]⟩,
+⟨467, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨197, 0x78766787678876787667876788767876678767887678766787678876787667876788778876677667887788766776678877887667766788778876677667887788766776677777887777766777778877777667777788777776677777887777766777778, -1, [469, 134, 14]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid927 (i : Fin 12) : (table927[i.val]?.getD default).ok (i.val+927)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table939 : Array Row := #[
+⟨311, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [313, 3]⟩,
+⟨183, 0x787877767676767778787878777676767677787878787776767676777878787877767676767778787878777676767677777778787777777676777777787877777776767777777878777777767677777778787777777676777777787, 1, [470, 188, 20]⟩,
+⟨469, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨155, 0x76678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678, 1, [471, 314, 6]⟩,
+⟨439, 0x6786867868768687686876867868678687686876868768678687686876868768687686786876868768687686876876868768687686876868768768687686876868768777687686876868768687687776876868768687687776877768768687686876877768777687686876877768777687776876868768777687776877768768777687776877768777687687776877768777687777776877768777687776877777768777687776877777777777687776877768777777777776877768777777777777777768777687777777777777777687777777777777777777776, 1, [41, 23]⟩,
+⟨231, 0x777777787777777677777778777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777, -1, [472, 16]⟩,
+⟨215, 0x77777777777777777677777777777777777677777777777777777777777777877777777877777777877777777877777777877777777877777777777777777777777777677777777677777777577777777677777777677777777777777777777777777877777777877777777, -1, [315, 189, 135]⟩,
+⟨209, 0x77776777778777787777767777677777877778777776777877777787776777777677787777778777677777767767777777877877777776776777777787787777777678777777778767777777767877777777876777777776677777777788777777777667777777778, -1, [473, 86, 22]⟩,
+⟨472, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨155, 0x77767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787877767677787, 1, [474, 316, 12]⟩,
+⟨431, 0x67868768687686786876868768678687686876867868768687686786876868768678687686876876868768687687686876868768768687686876876868768687687686876868768768687687776876868768777687686876877768768687687776876868768777687686876877768768777687776876877768777687687776877768768777687776876877768777687687776877777768777687777776877768777777687776877777768777687777776877768777777687777777777768777777777776877777777777687777777777768777777777776, 1, [73, 13]⟩,
+⟨179, 0x77777777787777777777777787777777776777777777777776777777777877777777777777877777777767777777777777767777677777777777777777778777787777777777777777777677776777777777777777777787777, -1, [475, 190, 50]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid939 (i : Fin 12) : (table939[i.val]?.getD default).ok (i.val+939)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table951 : Array Row := #[
+⟨315, 0x876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, -1, [317, 3]⟩,
+⟨191, 0x77777776777677777778777777767777777877787777777677777778777777767776777777787778777777777778777877777776777677777777777677767777777877787777777777777777777777767776777777777777777777777778777, 1, [476, 136, 56]⟩,
+⟨475, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨155, 0x77677777877877777677677777877877777677677777877877777677677777877877777677677777877877777677677777877877777677677777877877777677677777877877777677677777877, -1, [477, 318, 18]⟩,
+⟨379, 0x7767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, 1, [191, 5]⟩,
+⟨237, 0x787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, -1, [478, 4]⟩,
+⟨279, 0x776677877667787777878777787766778776678987667787766778777787766778776678987667787766778777787766667776678988777787766778777788876667776667888777787766778777788876667776667888777787766667777788877777776667888777788876667777777777777776667888777788876667777777777777776667777777788, 1, [319, 87, 33]⟩,
+⟨238, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [479, 2]⟩,
+⟨407, 0x78768767876876787687678768767876876787687678768767876876787687678768767876876787687678768767876876787687678768767876876787687678768767876877687687768768776876877687687768768776876877687687768768776876877687687768768776876877687687768768776876877687687768768776876877687687768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776, -1, [137, 7]⟩,
+⟨127, 0x7777777777777777777777777777777677777777777777777777777777777777777777777777777777777777777777787777777777777777777777777777777, -1, [480, 320, 192]⟩,
+⟨464, 0x77777777777777777777777777777787777777777777777777777777777778777777777777777777777777777777877777777777777777777777777777787777777777777777777777777777778777777777777777777777777777777877777777777777777777777777777787777777777777777777777777777778777777777777777777777777777777877777777777777777777777777777787777777777777777777777777777778777777777777777777777777777777877777777777777777777777777777787777777777777777777777777777778777777777777777777777777777777, 1, [31]⟩,
+⟨215, 0x66666788888888888876666666666667888888888877766666666667778888888888777666666667777788888888777776666666677777888888777777766666677777778888887777777666677777777788887777777776666777777777887777777777766777777777778, -1, [481, 74, 26]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid951 (i : Fin 12) : (table951[i.val]?.getD default).ok (i.val+951)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table963 : Array Row := #[
+⟨317, 0x77877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, -1, [321, 9]⟩,
+⟨239, 0x76787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767876787678767, 1, [482, 4]⟩,
+⟨383, 0x87686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, -1, [193, 5]⟩,
+⟨131, 0x76876877786786787687678678677768768767867876876877777686786777678678677777777768768776876877777777786786778678677777777777868777786, 1, [483, 322, 138, 42]⟩,
+⟨482, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨219, 0x777777777777777777777777777777777777777777787777777777777777777777777777777777777777777677777777777777777777777777777777777777777778777777777777777777777777777777777777777777767777777777777777777777777777777777777777777, -1, [484, 88]⟩,
+⟨287, 0x76767676767676767788888888888888888877676767676767665667676767676767788877788888888888877788877676767665667665667676767788877788877788888877788877788877665667665667665667788877788877788877777788877788877777777665667665667777777788877788877777777777788877777777777777665667777777777777788, -1, [323, 57, 51]⟩,
+⟨191, 0x88766667888876666788887666678888766667888876666788887666678888766667888876666788887666678888766667778877766777887776677788777667778877766777887776677788777667778877766777887776677788777667778, 1, [485, 194, 10]⟩,
+⟨484, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨161, 0x77777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777777, -1, [486, 324]⟩,
+⟨413, 0x77877767787776778777677877767787776778777677877767787776778777677877767787776778777677877767787776778777677877767787776778777677877767787776787777678777767877776787777678777767877776787777678777767877776787777678777767877776787777678777767877776787777678777767877776787777678777768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776877777687777768777776, -1, [139, 7]⟩,
+⟨242, 0x86868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [487, 2]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid963 (i : Fin 12) : (table963[i.val]?.getD default).ok (i.val+963)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table975 : Array Row := #[
+⟨239, 0x77778777777777677775777767777777778777787777877777777767777677777777787777877778777787777777776777767777777777777777777777777777767777677777777787777877778777787777777776777767777777777777777777777777777767777677776777777777777778777787777, 1, [325, 195, 75]⟩,
+⟨239, 0x77777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777877777776777777787777777677777778777777767777777, 1, [488, 16]⟩,
+⟨487, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨161, 0x76678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678876678, 1, [489, 326, 6]⟩,
+⟨439, 0x7777767777877777677778777776777787777767777877777677778777776777787777767777877777677778777777677787777776777877777767778777777677787777776777877777767778777777677787777776777877777776778777777767787777777677877777776778777777767787777777677877777776778777777767787777777767877777777678777777776787777777767877777777678777777776787777777767877777777678777777777687777777776877777777768777777777687777777776877777777768777777777687777777776, 1, [89, 11]⟩,
+⟨167, 0x77777777777778777777777777787777777777777777777777777776777777777777767777777777777677777777777776777777777777777777777777777777777777777777777777777777787777777777777, 1, [490, 196, 140]⟩,
+⟨323, 0x77777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677877777677, 1, [327, 9]⟩,
+⟨244, 0x8686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686, -1, [491, 2]⟩,
+⟨490, 0x8888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨159, 0x777677777778777877777776777677777778777877777776777677777778777877777776777677777778777877777776777677777778777877777776777677777778777877777776777677777778777, -1, [492, 328, 24]⟩,
+⟨391, 0x6876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686876868768687686877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, 1, [197, 5]⟩,
+⟨223, 0x6678888876666788888766666788887666666788887666678888887666678888777666678888766667778888766667778877766667888877766777888877766777887776666777887776677777887776677788777776677788777777777788777667777777777667777777777777778, -1, [493, 58, 34]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid975 (i : Fin 12) : (table975[i.val]?.getD default).ok (i.val+975)=true := by decide +kernel +revert
+
+
+set_option maxHeartbeats 20000000 in
+def table987 : Array Row := #[
+⟨275, 0x76767788888877676767676767788888877676767676767788888877676767676767788888877676767676767788888877665667677877788888877665667677877788888877665667788877777788877665667788877777788877665667788877777788877665667788877777788877665667788877777777777666777788877777777777666777788, -1, [329, 141, 21]⟩,
+⟨215, 0x77777877777877777776777776777776777776777777787776777777787777787777777677787777777677787777777778777677777778777677777777767677777777767778777777777878777777777878777777777776767777777776767777777777777777777777787, 1, [494, 76, 52]⟩,
+⟨461, 0x67867867868768768768768678678678687687687687686786786876876876876876867867868768768768768768678687687687687687687686786876876876876876876868768768768768768768768687687687687687687687776876876876876876876877768768768768768768777777687687687687687687777776876876876876877777777768768768768768777777777687687687687777777777776876876876877777777777768768768777777777777777687687687777777777777776876877777777777777777768768777777777777777777687777777777777777777776, 1, [43, 23]⟩,
+⟨119, 0x77877677877677777877577977577877777677877677777777777677877677777877577977677777877677877777777777877677877777777877677, -1, [495, 330, 198, 90]⟩,
+⟨494, 0x88888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888888, 1, [1]⟩,
+⟨239, 0x77777777777777787777777777777776777777777777777877777777777777767777777777777778777777777777777677777777777777787777777777777776777777777777777877777777777777767777777777777778777777777777777677777777777777787777777777777776777777777777777, -1, [496, 32]⟩,
+⟨329, 0x76876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876876, 1, [331, 3]⟩,
+⟨209, 0x77767767778778777677677787787776776777877877767767778778777677677787787777876777767877778767777678777787677776787777876777767877778767777678777776677777887777766777778877777667777788777776677777887777766777778, 1, [497, 142, 14]⟩,
+⟨395, 0x78776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776787767877678776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776877768777687776, -1, [199, 5]⟩
+]
+set_option maxHeartbeats 20000000 in
+set_option maxRecDepth 100000 in
+theorem valid987 (i : Fin 9) : (table987[i.val]?.getD default).ok (i.val+987)=true := by decide +kernel +revert
+
+
+theorem group_5 {n:ℕ} (lo:843≤n) (hi:n≤995) : ∃r:Row,r.ok n=true := by
+  by_cases h843 : n≤854
+  · let i : Fin 12 := ⟨n-843,by omega⟩
+    exact ⟨_,by simpa only [i,show n-843+843=n by omega] using valid843 i⟩
+  by_cases h855 : n≤866
+  · let i : Fin 12 := ⟨n-855,by omega⟩
+    exact ⟨_,by simpa only [i,show n-855+855=n by omega] using valid855 i⟩
+  by_cases h867 : n≤878
+  · let i : Fin 12 := ⟨n-867,by omega⟩
+    exact ⟨_,by simpa only [i,show n-867+867=n by omega] using valid867 i⟩
+  by_cases h879 : n≤890
+  · let i : Fin 12 := ⟨n-879,by omega⟩
+    exact ⟨_,by simpa only [i,show n-879+879=n by omega] using valid879 i⟩
+  by_cases h891 : n≤902
+  · let i : Fin 12 := ⟨n-891,by omega⟩
+    exact ⟨_,by simpa only [i,show n-891+891=n by omega] using valid891 i⟩
+  by_cases h903 : n≤914
+  · let i : Fin 12 := ⟨n-903,by omega⟩
+    exact ⟨_,by simpa only [i,show n-903+903=n by omega] using valid903 i⟩
+  by_cases h915 : n≤926
+  · let i : Fin 12 := ⟨n-915,by omega⟩
+    exact ⟨_,by simpa only [i,show n-915+915=n by omega] using valid915 i⟩
+  by_cases h927 : n≤938
+  · let i : Fin 12 := ⟨n-927,by omega⟩
+    exact ⟨_,by simpa only [i,show n-927+927=n by omega] using valid927 i⟩
+  by_cases h939 : n≤950
+  · let i : Fin 12 := ⟨n-939,by omega⟩
+    exact ⟨_,by simpa only [i,show n-939+939=n by omega] using valid939 i⟩
+  by_cases h951 : n≤962
+  · let i : Fin 12 := ⟨n-951,by omega⟩
+    exact ⟨_,by simpa only [i,show n-951+951=n by omega] using valid951 i⟩
+  by_cases h963 : n≤974
+  · let i : Fin 12 := ⟨n-963,by omega⟩
+    exact ⟨_,by simpa only [i,show n-963+963=n by omega] using valid963 i⟩
+  by_cases h975 : n≤986
+  · let i : Fin 12 := ⟨n-975,by omega⟩
+    exact ⟨_,by simpa only [i,show n-975+975=n by omega] using valid975 i⟩
+  by_cases h987 : n≤995
+  · let i : Fin 9 := ⟨n-987,by omega⟩
+    exact ⟨_,by simpa only [i,show n-987+987=n by omega] using valid987 i⟩
+  omega
+
+end Deldor14.Star.Shell963
+
+end
+
+section
+namespace Deldor14.Star.Shell963
+theorem has_row {n : ℕ} (lo:3≤n) (hi:n≤995) : ∃r:Row,r.ok n=true := by
+  by_cases h0 : n≤170
+  · exact group_0 (by omega) h0
+  by_cases h1 : n≤338
+  · exact group_1 (by omega) h1
+  by_cases h2 : n≤506
+  · exact group_2 (by omega) h2
+  by_cases h3 : n≤674
+  · exact group_3 (by omega) h3
+  by_cases h4 : n≤842
+  · exact group_4 (by omega) h4
+  exact group_5 (by omega) hi
+
+end Deldor14.Star.Shell963
+
+end
+
+theorem Deldor14.Star.Star963.ramsey_star_963 : Deldor14.Star.number 963=995 :=
+  Deldor14.Star.Star963.ramsey_star_963_of_parity (fun θ _ hd hu h =>
+    Deldor14.Star.Lift963.even_31_of_rows hd hu h Deldor14.Star.Shell963.has_row)
+
+theorem Deldor14.Star.square_and_star_values :
+    OMA.R_Erdos552_erdos_552_parts_ii_R1.H1 ∧ number 39=46 ∧ number 51=59 ∧ number 963=995 := by
+  exact ⟨fun p hp => prime_square hp, Waddle39.ramsey_star_39, Waddle51.ramsey_star_51, Star963.ramsey_star_963⟩
+
+theorem OMA.solution : OMA.R_Erdos552_erdos_552_parts_ii_R1.H1 := Deldor14.Star.square_and_star_values.1
