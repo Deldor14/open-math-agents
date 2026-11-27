@@ -4224,6 +4224,1150 @@ theorem ramsey_star_39 : Deldor14.Star.number 39=46 :=
   of_finite_obstruction (@traces_46) (@spectral_impossible)
 end Deldor14.Star.Waddle39
 
+
+/- For R(C₄,K₁,₅₁) the following Lean development formalizes the spectral
+and cyclotomic argument of Zach Waddle, The Ramsey number R(C₄,K₁,₅₁)
+(2026). The universal tables below check all cycle lengths from 1 to 59.
+The lower bound also has an independent finite-field construction.
+Original mathematical argument (CC BY 4.0), graph data and code (MIT):
+https://github.com/zach7036/c4-star-ramsey/tree/86a1c5055eea5e3891b2eeaea6c7ee1b3977bd33
+Formalization for Left to Solve by Deldor14. -/
+/- Affine points with nonzero first coordinate in characteristic two.
+Adjoining any chosen points at infinity preserves the minimum degree q−1. -/
+namespace Deldor14.Star.UnitsRows
+open Finset SimpleGraph
+variable {F : Type*} [Field F] [Fintype F] [DecidableEq F] [CharP F 2] {s : ℕ}
+
+abbrev Vertex (F : Type*) [Field F] (s : ℕ) := (Fˣ × F) ⊕ Fin s
+
+def point (r : Fin s ↪ Fˣ) : Vertex F s → Point F
+  | .inl (a,b) => .aff a b
+  | .inr i => .inf (r i)
+
+theorem injective_point (r : Fin s ↪ Fˣ) : Function.Injective (point r) := by
+  rintro (⟨a,b⟩|i) (⟨c,d⟩|j) e <;> simp_all [point]
+  · exact Units.ext e.1
+  · exact r.injective (Units.ext e)
+
+def host (r : Fin s ↪ Fˣ) := Point.graph.comap (point r)
+
+theorem no_square (r : Fin s ↪ Fˣ) : ¬(cycleGraph 4).IsContained (host r) := by
+  have sub : (host r).IsContained Point.graph := ⟨⟨⟨point r,fun h=>h⟩,injective_point r⟩⟩
+  exact fun bad=>Point.no_square (bad.trans sub)
+
+def neighbor (r : Fin s ↪ Fˣ) (v : Vertex F s) (j : Fˣ) : Vertex F s :=
+  match v with
+  | .inl (a,b) => .inl (j,(a:F)*j-b)
+  | .inr i => .inl (r i,(j:F))
+
+theorem minimum (r : Fin s ↪ Fˣ) [DecidableRel (host r).Adj] (v : Vertex F s) :
+    Fintype.card F-1 ≤ (host r).degree v := by
+  have inj : Function.Injective (neighbor r v) := by
+    intro j k h
+    cases v with
+    | inl ax => obtain ⟨a,b⟩ := ax; exact (Prod.mk.inj (Sum.inl.inj h)).1
+    | inr i => exact Units.ext (Prod.mk.inj (Sum.inl.inj h)).2
+  have adj (j : Fˣ) : (host r).Adj v (neighbor r v j) := by
+    cases v with
+    | inl ax =>
+      obtain ⟨a,b⟩ := ax
+      have no : ¬((a:F)=(j:F) ∧ b=(a:F)*j-b) := by
+        rintro ⟨e,h⟩
+        have t : (a:F)*(a:F)=b+b := by rw [e] at h ⊢; linear_combination -h
+        rw [CharTwo.add_self_eq_zero] at t
+        exact a.ne_zero (mul_self_eq_zero.mp t)
+      simp [host,Point.graph,Point.inc,neighbor,point,no]
+    | inr i => simp [host,Point.graph,Point.inc,neighbor,point]
+  let f (j : Fˣ) : ↥((host r).neighborFinset v) := ⟨neighbor r v j,(mem_neighborFinset ..).mpr (adj j)⟩
+  have fi : Function.Injective f := fun _ _ e=>inj (congrArg Subtype.val e)
+  simpa only [Fintype.card_units,Fintype.card_coe,card_neighborFinset_eq_degree] using
+    Fintype.card_le_of_injective f fi
+
+theorem lower (F : Type*) [Field F] [Fintype F] [CharP F 2] {s : ℕ} (room : s≤Fintype.card F-1) :
+    (Fintype.card F-1)^2+s+Fintype.card F ≤ number ((Fintype.card F-1)^2+s) := by
+  classical
+  let q := Fintype.card F
+  let e := (Fintype.equivFin Fˣ).symm.toEmbedding
+  let r : Fin s ↪ Fˣ := (Fin.castLEEmb (by simpa only [Fintype.card_units] using room)).trans e
+  let G := host r
+  have size : Fintype.card (Vertex F s) = (q-1)*q+s := by simp [Vertex,Fintype.card_units,q]
+  have two : 2≤q := Fintype.one_lt_card
+  have key : (q-1)*q=(q-1)^2+(q-1) := by
+    have h : q-1+1=q := by omega
+    calc
+      (q-1)*q = (q-1)*(q-1+1) := by conv_lhs => rw [←h]; simp only [Nat.add_sub_cancel]
+      _ = _ := by ring
+  have positive : 0<(q-1)^2 := by exact pow_pos (by omega) _
+  have blue : ∀ v,Gᶜ.degree v < (q-1)^2+s := by
+    intro v
+    have d := minimum r v
+    change q-1≤G.degree v at d
+    rw [degree_compl,size,key]
+    omega
+  have lb : Fintype.card (Vertex F s)<number ((q-1)^2+s) := lower_from_host G (no_square r) blue
+  rw [size,key] at lb
+  change (q-1)^2+s+q ≤ number ((q-1)^2+s)
+  omega
+
+theorem power_two_lower {m s : ℕ} (hm : m≠0) (room : s≤2^m-1) :
+    (2^m-1)^2+s+2^m ≤ number ((2^m-1)^2+s) := by
+  letI : Fintype (GaloisField 2 m) := Fintype.ofFinite _
+  have hq : Fintype.card (GaloisField 2 m)=2^m := by rw [← Nat.card_eq_fintype_card,GaloisField.card 2 m hm]
+  simpa only [hq] using lower (GaloisField 2 m) (s:=s) (by simpa only [hq] using room)
+
+theorem lower_51 : 59≤number 51 := by
+  simpa using power_two_lower (m:=3) (s:=2) (by decide) (by decide)
+
+end Deldor14.Star.UnitsRows
+
+/- In a finite 2-regular graph a non-backtracking walk can repeat a vertex
+only in the same direction. The period of its ordered edges is accordingly
+bounded by the number of vertices. -/
+namespace Deldor14.Star.Waddle51
+open Finset SimpleGraph
+variable {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj]
+
+private theorem complete_pair (reg : ∀ i, G.degree i = 2) {a b : V} (h : G.Adj a b) :
+    ∃ c, c ≠ a ∧ G.neighborFinset b = {a,c} := by
+  classical
+  have mem := (G.mem_neighborFinset _ _).mpr h.symm
+  have card : ((G.neighborFinset b).erase a).card = 1 := by
+    rw [card_erase_of_mem mem,card_neighborFinset_eq_degree,reg]
+  obtain ⟨c,e⟩ := card_eq_one.mp card
+  have cm : c ∈ (G.neighborFinset b).erase a := by rw [e]; simp
+  exact ⟨c,(mem_erase.mp cm).1,by rw [←e,insert_erase mem]⟩
+
+private def vertexSeq (s : V → V → V) (a b : V) : ℕ → V
+  | 0 => a
+  | 1 => b
+  | n+2 => s (vertexSeq s a b n) (vertexSeq s a b (n+1))
+
+private theorem no_reverse (p : ℕ → V) (edge : ∀ n, G.Adj (p n) (p (n+1)))
+    (back : ∀ n, p (n+2) ≠ p n)
+    (row : ∀ n, G.neighborFinset (p (n+1)) = {p n,p (n+2)}) :
+    ∀ k t : ℕ, ¬ (p t = p (t+k+1) ∧ p (t+1) = p (t+k)) := by
+  intro k
+  induction k using Nat.twoStepInduction with
+  | zero => intro t eq; exact (edge t).ne (by simpa using eq.1)
+  | one => intro t eq; exact back t (by simpa [Nat.add_assoc] using eq.1.symm)
+  | more k ih _ =>
+    intro t h
+    have end_eq : p t = p ((t+k+1)+2) := by convert h.1 using 2 <;> omega
+    have mid_eq : p (t+1) = p ((t+k+1)+1) := by convert h.2 using 2 <;> omega
+    have m := (G.mem_neighborFinset _ _).mpr (edge (t+1))
+    rw [mid_eq,row (t+k+1),mem_insert,mem_singleton] at m
+    have prev : p (t+2) = p (t+k+1) := m.resolve_right (fun e => back t (e.trans end_eq.symm))
+    apply ih (t+1)
+    exact ⟨by convert mid_eq using 2 <;> omega,by convert prev using 2 <;> omega⟩
+
+theorem closed_walk (reg : ∀ i, G.degree i = 2) (a : V) :
+    ∃ (p : ℕ → V) (i d : ℕ), p 0 = a ∧ 0 < d ∧ d ≤ Fintype.card V ∧
+      p i = p (i+d) ∧ p (i+1) = p (i+d+1) ∧
+      ∀ n, p (n+2) ≠ p n ∧ G.neighborFinset (p (n+1)) = {p n,p (n+2)} := by
+  classical
+  let s (x y : V) := if h : G.Adj x y then (complete_pair G reg h).choose else x
+  have step {x y : V} (xy : G.Adj x y) :
+      s x y ≠ x ∧ G.neighborFinset y = {x,s x y} := by
+    simpa only [s,dif_pos xy] using (complete_pair G reg xy).choose_spec
+  obtain ⟨b,bm⟩ := Finset.card_pos.mp (show 0 < (G.neighborFinset a).card by
+    rw [card_neighborFinset_eq_degree,reg]; decide)
+  let p := vertexSeq s a b
+  have advance (n : ℕ) : p (n+2) = s (p n) (p (n+1)) := rfl
+  have edge (n : ℕ) : G.Adj (p n) (p (n+1)) := by
+    induction n with
+    | zero => exact (G.mem_neighborFinset _ _).mp bm
+    | succ n ih =>
+      apply (G.mem_neighborFinset _ _).mp
+      rw [(step ih).2,advance]
+      simp
+  have back (n : ℕ) : p (n+2) ≠ p n := (step (edge n)).1
+  have row (n : ℕ) : G.neighborFinset (p (n+1)) = {p n,p (n+2)} := (step (edge n)).2
+  obtain ⟨x,y,ne,eq⟩ := Fintype.exists_ne_map_eq_of_card_lt
+    (fun z : Fin (Fintype.card V + 1) => p z.val) (by simp)
+  have coll : ∃ i j : ℕ, i < j ∧ j ≤ Fintype.card V ∧ p i = p j := by
+    rcases lt_or_gt_of_ne ne with lt | gt
+    · exact ⟨x.val,y.val,lt,by have := y.isLt; omega,eq⟩
+    · exact ⟨y.val,x.val,gt,by have := x.isLt; omega,eq.symm⟩
+  obtain ⟨i,j,lt,lim,dup⟩ := coll
+  obtain ⟨k,hj⟩ : ∃ k, j = i+k+1 := ⟨j-i-1,by omega⟩
+  subst j
+  have mem := (G.mem_neighborFinset _ _).mpr (edge i)
+  rw [dup,row (i+k),mem_insert,mem_singleton] at mem
+  have same := mem.resolve_left (fun e => no_reverse G p edge back row k i ⟨dup,e⟩)
+  exact ⟨p,i,k+1,rfl,by omega,by omega,by convert dup using 2 <;> omega,
+    by convert same using 2 <;> omega,fun n => ⟨back n,row n⟩⟩
+
+end Deldor14.Star.Waddle51
+
+/- Vieta–Lucas polynomials in a scalar recurrence on a periodic walk. -/
+namespace Deldor14.Star.Waddle51
+
+def vieta (μ : ℝ) : ℕ → ℝ
+  | 0 => 2
+  | 1 => μ
+  | n+2 => μ * vieta μ (n+1) - vieta μ n
+
+private theorem double_shift (μ : ℝ) (x : ℕ → ℝ)
+    (rec : ∀ n, x n + x (n+2) = μ*x (n+1)) :
+    ∀ k n, vieta μ k * x (n+k) = x n + x (n+k+k) := by
+  intro k
+  induction k using Nat.twoStepInduction with
+  | zero => intro n; simp [vieta]; ring
+  | one => intro n; simpa [vieta,Nat.add_assoc] using (rec n).symm
+  | more k small big =>
+    intro n
+    have r : μ*x (n+(k+2)) = x (n+(k+1)) + x ((n+2)+(k+1)) := by
+      convert (rec (n+k+1)).symm using 2 <;> congr 1 <;> omega
+    have h := big n
+    have h' := big (n+2)
+    have h'' := small (n+2)
+    have re1 : (n+2)+k = n+(k+2) := by omega
+    have re2 : (n+2)+k+k = n+(k+1)+(k+1) := by omega
+    have re3 : (n+2)+(k+1)+(k+1) = n+(k+2)+(k+2) := by omega
+    rw [re2,re1] at h''
+    rw [re3] at h'
+    change (μ*vieta μ (k+1)-vieta μ k)*x (n+(k+2)) = _
+    linear_combination vieta μ (k+1) * r + h + h' - h''
+
+theorem period_value (μ : ℝ) (x : ℕ → ℝ) (nz : x 0 ≠ 0)
+    (rec : ∀ n, x n + x (n+2) = μ*x (n+1))
+    (i d : ℕ) (at_i : x i = x (i+d)) (at_succ : x (i+1) = x (i+d+1)) :
+    vieta μ d = 2 := by
+  let z (n : ℕ) := x n - x (n+d)
+  have rz (n : ℕ) : z n + z (n+2) = μ*z (n+1) := by
+    dsimp [z]
+    have r := rec (n+d)
+    rw [show n+d+2 = n+2+d by omega,show n+d+1 = n+1+d by omega] at r
+    linear_combination rec n - r
+  have back (n : ℕ) : z n = 0 → z (n+1) = 0 → z 0 = 0 ∧ z 1 = 0 := by
+    induction n with
+    | zero => exact fun h h' => ⟨h,h'⟩
+    | succ n ih =>
+      intro h h'
+      apply ih _ h
+      have r := rz n
+      rw [h,h'] at r
+      linarith
+  have start := back i (sub_eq_zero.mpr at_i) (sub_eq_zero.mpr (by
+    convert at_succ using 2 <;> omega))
+  have zero (n : ℕ) : z n = 0 := by
+    induction n using Nat.twoStepInduction with
+    | zero => exact start.1
+    | one => exact start.2
+    | more n h h' =>
+      have r := rz n
+      rw [h,h'] at r
+      linarith
+  have shift (n : ℕ) : x (n+d) = x n := (sub_eq_zero.mp (zero n)).symm
+  have h := double_shift μ x rec d 0
+  rw [shift (0+d),shift 0] at h
+  exact (mul_right_cancel₀ nz) (by linarith : vieta μ d*x 0 = 2*x 0)
+
+end Deldor14.Star.Waddle51
+
+/-
+The spectrum of a finite 2-regular graph obeys a Vieta–Lucas equation
+whose degree is at most its number of vertices. This implements the
+cycle observation in §3 of Zach Waddle, *The Ramsey number R(C₄,K₁,₅₁)*
+(2026), © Zach Waddle, CC BY 4.0. Lean formalization by Deldor14.
+https://github.com/zach7036/c4-star-ramsey/blob/86a1c5055eea5e3891b2eeaea6c7ee1b3977bd33/R_C4_K1_51.md
+https://creativecommons.org/licenses/by/4.0/
+-/
+namespace Deldor14.Star.Waddle51
+open Matrix Finset SimpleGraph
+
+theorem cycle_spectrum {V : Type*} [Fintype V] [DecidableEq V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] (reg : ∀ i, G.degree i = 2)
+    (μ : ℝ) (x : V → ℝ) (nz : x ≠ 0) (eig : G.adjMatrix ℝ *ᵥ x = μ • x) :
+    ∃ d : ℕ, 0 < d ∧ d ≤ Fintype.card V ∧ vieta μ d = 2 := by
+  classical
+  obtain ⟨a,ha⟩ : ∃ a, x a ≠ 0 := by
+    by_contra! h
+    exact nz (funext h)
+  obtain ⟨p,i,d,pa,pos,le,repeat0,repeat1,rows⟩ := closed_walk G reg a
+  refine ⟨d,pos,le,period_value μ (fun n => x (p n)) (pa ▸ ha) ?_ i d
+    (congrArg x repeat0) (congrArg x repeat1)⟩
+  intro n
+  have eq := congrFun eig (p (n+1))
+  rw [G.adjMatrix_mulVec_apply,(rows n).2] at eq
+  simpa [((rows n).1).symm] using eq
+
+end Deldor14.Star.Waddle51
+
+/- Real eigenvalues of an adjacency matrix with a 2-regular deficiency graph. -/
+namespace Deldor14.Star.Waddle51
+open Finset Matrix Unitary SimpleGraph
+
+private theorem lower_diag {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V)
+    [DecidableRel G.Adj] (reg : ∀ x, G.degree x = 2) (U : Matrix.unitaryGroup V ℝ) (i : V) :
+    -2 ≤ (conjStarAlgAut ℝ _ (star U) (G.adjMatrix ℝ)) i i := by
+  let e := conjStarAlgAut ℝ _ (star U)
+  have deg : G.degMatrix ℝ = (2:ℝ) • (1:Matrix V V ℝ) := by
+    ext i j
+    simp [degMatrix,Matrix.smul_apply,Matrix.one_apply,diagonal_apply,reg]
+  have plus := (Waddle39.signless_pos G).mul_mul_conjTranspose_same
+    ((star U : Matrix.unitaryGroup V ℝ) : Matrix V V ℝ)
+  have p : 0 ≤ (e (G.degMatrix ℝ + G.adjMatrix ℝ)) i i := plus.diag_nonneg
+  rw [deg,map_add,map_smul,map_one,Matrix.add_apply,Matrix.smul_apply,Matrix.one_apply_eq,
+    smul_eq_mul,mul_one] at p
+  change -2 ≤ e (G.adjMatrix ℝ) i i
+  linarith
+
+private theorem transfer {V : Type*} [Fintype V] [DecidableEq V]
+    (A J : Matrix V V ℝ) (D : SimpleGraph V) [DecidableRel D.Adj] (x : V → ℝ)
+    (θ : ℝ) (eig : A *ᵥ x = θ • x) (off : θ ≠ 8) (rightJ : J*A = (8:ℝ) • J)
+    (square : A^2 = (7:ℝ) • 1 + J - D.adjMatrix ℝ) :
+    D.adjMatrix ℝ *ᵥ x = (7-θ^2) • x := by
+  have jr := congrArg (fun B : Matrix V V ℝ => B *ᵥ x) rightJ
+  change (J*A) *ᵥ x = ((8:ℝ) • J) *ᵥ x at jr
+  rw [←mulVec_mulVec,eig,mulVec_smul,smul_mulVec] at jr
+  have jzero : J *ᵥ x = 0 := by
+    ext i
+    have eq := congrFun jr i
+    change θ * (J *ᵥ x) i = 8 * (J *ᵥ x) i at eq
+    have v : (θ-8) * (J *ᵥ x) i = 0 := by linear_combination eq
+    exact (mul_eq_zero.mp v).resolve_left (sub_ne_zero.mpr off)
+  have aq := congrArg (fun B : Matrix V V ℝ => B *ᵥ x) square
+  change (A^2) *ᵥ x = ((7:ℝ) • 1 + J - D.adjMatrix ℝ) *ᵥ x at aq
+  rw [sq,←mulVec_mulVec,eig,mulVec_smul,eig,sub_mulVec,add_mulVec,smul_mulVec,one_mulVec,jzero,add_zero] at aq
+  ext i
+  have entry := congrFun aq i
+  change θ*(θ*x i) = 7*x i - (D.adjMatrix ℝ *ᵥ x) i at entry
+  change (D.adjMatrix ℝ *ᵥ x) i = (7-θ^2)*x i
+  linear_combination entry
+
+theorem spectral_rows (A J : Matrix (Fin 59) (Fin 59) ℝ) (D : SimpleGraph (Fin 59))
+    [DecidableRel D.Adj] (reg : ∀ i, D.degree i = 2) (herm : A.IsHermitian)
+    (square : A^2 = (7:ℝ) • 1 + J - D.adjMatrix ℝ)
+    (rightJ : J*A = (8:ℝ) • J) (trJ : J.trace = 59) :
+    ∃ t : Fin 59, herm.eigenvalues t = 8 ∧ (∀ i, herm.eigenvalues i = 8 → i = t) ∧
+      ∀ i, herm.eigenvalues i ≠ 8 → ∃ d : ℕ, 0 < d ∧ d ≤ 59 ∧
+        vieta (7 - (herm.eigenvalues i)^2) d = 2 := by
+  classical
+  let f := herm.eigenvalues
+  let e := conjStarAlgAut ℝ _ (star herm.eigenvectorUnitary)
+  let j (i : Fin 59) := (e J) i i
+  have diagA : e A = diagonal f := by
+    simpa [e,f,Function.comp_def] using herm.conjStarAlgAut_star_eigenvectorUnitary
+  have traceConj (B : Matrix (Fin 59) (Fin 59) ℝ) : (e B).trace = B.trace := by
+    dsimp only [e]
+    rw [conjStarAlgAut_apply,trace_mul_cycle,coe_star_mul_self,one_mul]
+  have jSum : ∑ i, j i = 59 := (traceConj J).trans trJ
+  have relation (i : Fin 59) : j i * (f i - 8) = 0 := by
+    have eq := congrArg e rightJ
+    rw [map_mul,map_smul,diagA] at eq
+    have entry := congrArg (fun B : Matrix (Fin 59) (Fin 59) ℝ => B i i) eq
+    simp only [mul_diagonal,Matrix.smul_apply,smul_eq_mul] at entry
+    dsimp only [j]
+    linear_combination entry
+  have off (i : Fin 59) (h : f i ≠ 8) : j i = 0 :=
+    (mul_eq_zero.mp (relation i)).resolve_right (sub_ne_zero.mpr h)
+  have near (i : Fin 59) (h : f i = 8) : 55 ≤ j i := by
+    have eq := congrArg e square
+    rw [map_pow,map_sub,map_add,map_smul,map_one,diagA,diagonal_pow] at eq
+    have entry := congrArg (fun B : Matrix (Fin 59) (Fin 59) ℝ => B i i) eq
+    simp only [diagonal_apply_eq,Pi.pow_apply,h,Matrix.sub_apply,Matrix.add_apply,Matrix.smul_apply,
+      Matrix.one_apply_eq,smul_eq_mul,mul_one] at entry
+    have lo : -2 ≤ (e (D.adjMatrix ℝ)) i i := lower_diag D reg herm.eigenvectorUnitary i
+    dsimp only [j]
+    linarith only [lo,entry]
+  let top := univ.filter (fun i => f i = 8)
+  have row (i : Fin 59) : (if f i = 8 then (55:ℝ) else 0) ≤ j i := by
+    split
+    · exact near i ‹_›
+    · rw [off i ‹_›]
+  have upper := Finset.sum_le_sum (s:=univ) (fun i _ => row i)
+  rw [jSum] at upper
+  have tally : (top.card:ℝ)*55 ≤ 59 := by simpa [top,Finset.sum_ite] using upper
+  have card_le : top.card ≤ 1 := by
+    by_contra! h
+    have hn : (2:ℝ) ≤ top.card := by exact_mod_cast h
+    linarith
+  have nonempty : top.Nonempty := by
+    by_contra! empty
+    have zero (i : Fin 59) : j i = 0 := by
+      apply off i
+      intro hi
+      have h : i ∈ top := mem_filter.mpr ⟨mem_univ _,hi⟩
+      simp [empty] at h
+    simp [zero] at jSum
+  obtain ⟨t,ht⟩ := Finset.card_eq_one.mp (le_antisymm card_le (Finset.card_pos.mpr nonempty))
+  refine ⟨t,(mem_filter.mp (show t ∈ top by rw [ht]; simp)).2,?_,?_⟩
+  · intro i fi
+    have m : i ∈ top := mem_filter.mpr ⟨mem_univ _,fi⟩
+    rwa [ht,mem_singleton] at m
+  · intro i fi
+    let x := (herm.eigenvectorBasis i : Fin 59 → ℝ)
+    have nonzero : x ≠ 0 := (WithLp.ofLp_eq_zero 2).ne.2 (herm.eigenvectorBasis.orthonormal.ne_zero i)
+    have eig := transfer A J D x (herm.eigenvalues i) (herm.mulVec_eigenvectorBasis i) fi rightJ square
+    simpa using cycle_spectrum D reg _ x nonzero eig
+
+end Deldor14.Star.Waddle51
+
+/- Deflation of the unique principal eigenvalue over the rationals. -/
+namespace Deldor14.Star.Waddle51
+open Matrix Finset Polynomial SimpleGraph
+
+theorem rational_factor (A J : Matrix (Fin 59) (Fin 59) ℝ) (D : SimpleGraph (Fin 59))
+    [DecidableRel D.Adj] (reg : ∀ i, D.degree i = 2) (herm : A.IsHermitian)
+    (square : A^2 = (7:ℝ) • 1 + J - D.adjMatrix ℝ)
+    (rightJ : J*A = (8:ℝ) • J) (trJ : J.trace = 59)
+    (F : ℚ[X]) (monic : F.Monic) (rational : F.map (algebraMap ℚ ℝ) = A.charpoly) :
+    ∃ Q : ℚ[X], Q.Monic ∧ F = (X - C 8)*Q ∧ Q.eval 8 ≠ 0 ∧
+      (F.map (algebraMap ℚ ℝ)).Splits ∧
+      ∀ θ : ℝ, (F.map (algebraMap ℚ ℝ)).IsRoot θ → θ ≠ 8 →
+        ∃ d : ℕ, 0 < d ∧ d ≤ 59 ∧ vieta (7-θ^2) d = 2 := by
+  classical
+  obtain ⟨t,ft,unique,other⟩ := spectral_rows A J D reg herm square rightJ trJ
+  let f := herm.eigenvalues
+  let S := univ.erase t
+  let g (i : Fin 59) := (X - C (f i) : ℝ[X])
+  have full : F.map (algebraMap ℚ ℝ) = ∏ i, g i := by
+    rw [rational]
+    simpa [g,f] using herm.charpoly_eq
+  have fact : F.map (algebraMap ℚ ℝ) = (X-C 8) * ∏ i ∈ S, g i := by
+    rw [full,←Finset.mul_prod_erase univ g (mem_univ t)]
+    simp only [g, f, ft, S]
+  have root8 : F.IsRoot (8:ℚ) := by
+    have real8 : (F.map (algebraMap ℚ ℝ)).eval (8:ℝ) = 0 := by rw [fact]; simp
+    apply (algebraMap ℚ ℝ).injective
+    change algebraMap ℚ ℝ (F.eval 8) = _
+    rw [map_zero,←eval_map_apply]
+    simpa using real8
+  obtain ⟨Q,eq⟩ := Polynomial.dvd_iff_isRoot.mpr root8
+  have small : Q.map (algebraMap ℚ ℝ) = ∏ i ∈ S, g i := by
+    apply mul_left_cancel₀ (X_sub_C_ne_zero (8:ℝ))
+    conv_lhs => rw [show (X-C 8 : ℝ[X]) =
+      (X-C 8 : ℚ[X]).map (algebraMap ℚ ℝ) by simp]
+    rw [←Polynomial.map_mul,←eq,fact]
+  refine ⟨Q,(monic_X_sub_C (8:ℚ)).of_mul_monic_left (eq ▸ monic),eq,?_,rational ▸ herm.splits_charpoly,?_⟩
+  · intro h
+    have hz := congrArg (algebraMap ℚ ℝ) h
+    rw [map_zero,←eval_map_apply] at hz
+    have zero : (Q.map (algebraMap ℚ ℝ)).eval (8:ℝ) = 0 := by simpa using hz
+    rw [small,eval_prod,Finset.prod_eq_zero_iff] at zero
+    obtain ⟨i,hi,vanish⟩ := zero
+    have fi : f i = 8 := by
+      simp only [g,eval_sub,eval_X,eval_C] at vanish
+      linarith
+    exact (mem_erase.mp hi).1 (unique i fi)
+  · intro θ root ne
+    rw [full,IsRoot,eval_prod,Finset.prod_eq_zero_iff] at root
+    obtain ⟨i,_,hi⟩ := root
+    have eqf : θ = f i := by exact sub_eq_zero.mp (by simpa [g] using hi)
+    subst θ
+    exact other i ne
+
+end Deldor14.Star.Waddle51
+
+/- Transfer the 59-vertex obstruction and Waddle's verified 58-vertex graph
+to the Ramsey number for the star with 51 leaves. -/
+namespace Deldor14.Star.Waddle51
+open Finset SimpleGraph Matrix Polynomial ExcessOne OMA.ChenStar
+
+theorem star_51_of_classification
+    (cyclo : ∀ (θ : ℝ) {d : ℕ}, 0 < d → d ≤ 59 → vieta (7-θ^2) d = 2 →
+      θ = 3 ∨ θ = -3 ∨ (minpoly ℚ θ).comp (-X) = minpoly ℚ θ)
+    (obstruction : ∀ {F Q : ℚ[X]}, Q.Monic → F = (X-C 8)*Q → Q.eval 8 ≠ 0 →
+      (F.map (algebraMap ℚ ℝ)).Splits →
+      (∀ θ : ℝ, (F.map (algebraMap ℚ ℝ)).IsRoot θ → θ ≠ 8 →
+        θ = 3 ∨ θ = -3 ∨ (minpoly ℚ θ).comp (-X) = minpoly ℚ θ) → F.nextCoeff ≠ 0) :
+    Deldor14.Star.number 51 = 59 := by
+  classical
+  apply Nat.le_antisymm _ Waddle39.Host58.lower
+  apply Nat.sInf_le
+  intro G
+  by_cases red : (cycleGraph 4).IsContained G
+  · exact Or.inl red
+  right
+  by_contra nonstar
+  have minimum (v) : 8 ≤ G.degree v := by
+    have l : Gᶜ.degree v < 51 :=
+      lt_of_not_ge (fun ge => nonstar (star_isContained_of_le_degree Gᶜ ge))
+    rw [degree_compl,Fintype.card_fin] at l
+    omega
+  have reg := Deficiency.regular_of_bounds G red minimum (by decide)
+  let D := Deficiency.graph G
+  have dr (v) : D.degree v = 2 := Deficiency.degree G red (d:=8) (e:=2) (by decide) reg v
+  let A := G.adjMatrix ℝ
+  let J := ones (Fin 59) ℝ
+  have aa : A^2 = (7:ℝ) • 1 + J - D.adjMatrix ℝ := by
+    simpa only [Nat.cast_ofNat,show (8:ℝ)-1=7 by norm_num] using Deficiency.adj_square G red reg
+  have rightJ : J*A = (8:ℝ) • J := by
+    ext i j
+    change (ones (Fin 59) ℝ * G.adjMatrix ℝ) i j = _
+    rw [mul_adjMatrix_apply]
+    simp [J,ones,reg]
+  have trJ : J.trace = 59 := by simp [J,ones,Matrix.trace,Matrix.diag]
+  have herm : A.IsHermitian := by
+    change Aᴴ = A
+    rw [conjTranspose_eq_transpose_of_trivial]
+    exact G.isSymm_adjMatrix
+  let F := (G.adjMatrix ℚ).charpoly
+  have rational : F.map (algebraMap ℚ ℝ) = A.charpoly := by
+    dsimp only [F]
+    rw [←Matrix.charpoly_map]
+    apply congrArg Matrix.charpoly
+    ext i j
+    by_cases h : G.Adj i j <;> simp [A,Matrix.map_apply,adjMatrix_apply,h]
+  obtain ⟨Q,hm,eq,h8,split,roots⟩ := rational_factor A J D dr herm aa rightJ trJ F
+    (Matrix.charpoly_monic _) rational
+  have no := obstruction hm eq h8 split (fun θ hθ ne => by
+    obtain ⟨d,pos,le,h⟩ := roots θ hθ ne
+    exact cyclo θ pos le h)
+  apply no
+  have ht := Matrix.trace_eq_neg_charpoly_nextCoeff (G.adjMatrix ℚ)
+  rw [G.trace_adjMatrix ℚ] at ht
+  dsimp only [F]
+  linarith
+
+end Deldor14.Star.Waddle51
+
+/- Reflected integer polynomial arithmetic for the finite cyclotomic norm certificates. -/
+namespace Deldor14.Star.Cyclo51
+open Polynomial
+def val {R : Type*} [CommRing R] (x : R) : List ℤ → R
+  | [] => 0
+  | a::as => (a:R)+x*val x as
+
+def plus : List ℤ → List ℤ → List ℤ
+  | [],b => b
+  | a,[] => a
+  | a::as,b::bs => (a+b)::plus as bs
+
+def shift : List ℤ → List ℤ
+  | [] => []
+  | a::as => 0::a::as
+
+def times : List ℤ → List ℤ → List ℤ
+  | [],_ => []
+  | a::as,b => plus (b.map (a*·)) (shift (times as b))
+
+def substAt (p q : List ℤ) : List ℤ :=
+  p.foldr (fun a tail => plus [a] (times q tail)) []
+
+theorem val_plus {R : Type*} [CommRing R] (x:R) (a b : List ℤ) :
+    val x (plus a b) = val x a + val x b := by
+  induction a generalizing b with
+  | nil => simp [plus,val]
+  | cons c cs ih =>
+    cases b with
+    | nil => simp [plus,val]
+    | cons d ds => simp [plus,val,ih]; ring
+
+theorem val_scale {R : Type*} [CommRing R] (x : R) (c : ℤ) (p : List ℤ) :
+    val x (p.map (c*·)) = (c:R)*val x p := by
+  induction p with
+  | nil => simp [val]
+  | cons a as ih => simp [val,ih]; ring
+
+theorem val_shift {R : Type*} [CommRing R] (x:R) (p : List ℤ) :
+    val x (shift p) = x*val x p := by cases p <;> simp [shift,val]
+
+theorem val_times {R : Type*} [CommRing R] (x:R) (a b : List ℤ) :
+    val x (times a b) = val x a * val x b := by
+  induction a with
+  | nil => simp [times,val]
+  | cons c cs ih =>
+    rw [times,val_plus,val_shift,val_scale,ih,val]
+    ring
+
+theorem val_subst {R : Type*} [CommRing R] (x:R) (p q : List ℤ) :
+    val x (substAt p q) = val (val x q) p := by
+  induction p with
+  | nil => simp [substAt,val]
+  | cons a as ih =>
+    change val x (plus [a] (times q (substAt as q))) = _
+    simp [val_plus,val_times,ih,val]
+
+def vs : ℕ → List ℤ
+  | 0 => [2]
+  | 1 => [0,1]
+  | n+2 => plus (shift (vs (n+1))) ((vs n).map ((-1)*·))
+
+theorem val_vs {R : Type*} [CommRing R] (x : R) (n : ℕ) :
+    val x (vs (n+2))=x*val x (vs (n+1))-val x (vs n) := by
+  rw [vs,val_plus,val_shift,val_scale]
+  push_cast
+  ring
+
+theorem vs_primitive (z : ℂ) (nz : z≠0) (n : ℕ) :
+    val (z+z⁻¹) (vs n)=z^n+(z⁻¹)^n := by
+  induction n using Nat.twoStepInduction with
+  | zero => simp [vs,val]; norm_num
+  | one => simp [vs,val]
+  | more n ih ih' =>
+    rw [val_vs,ih',ih]
+    simp only [pow_succ]
+    field_simp
+    ring
+
+def prodCodes : List (List ℤ) → List ℤ
+  | [] => [1]
+  | c::cs => times c (prodCodes cs)
+
+theorem val_prod {R : Type*} [CommRing R] (x:R) (cs : List (List ℤ)) :
+    val x (prodCodes cs) = (cs.map (val x)).prod := by
+  induction cs with
+  | nil => simp [val,prodCodes]
+  | cons a as ih => simp [prodCodes,val_times,ih]
+
+noncomputable def poly (p : List ℤ) : ℚ[X] := val X p
+
+theorem aeval_poly {R : Type*} [Field R] [Algebra ℚ R] (x:R) (p : List ℤ) :
+    aeval x (poly p)=val x p := by
+  induction p with
+  | nil => simp [poly,val]
+  | cons a as ih =>
+    change aeval x ((a:ℚ[X])+X*poly as)=_
+    simp only [map_add,map_mul,aeval_X,map_intCast,ih,val]
+
+theorem monic_code (p : List ℤ) : (poly (p++[1])).Monic ∧ (poly (p++[1])).natDegree=p.length := by
+  induction p with
+  | nil => simp [poly,val]
+  | cons a as ih =>
+    change (((a:ℚ[X])+X*poly (as++[1])).Monic ∧ ((a:ℚ[X])+X*poly (as++[1])).natDegree=as.length+1)
+    have high : (X * poly (as++[1])).natDegree=as.length+1 := by rw [natDegree_X_mul ih.1.ne_zero,ih.2]
+    have lt : (a:ℚ[X]).degree < (X * poly (as++[1])).degree := by
+      have ac : (a:ℚ[X])=C (a:ℚ) := by simp
+      rw [ac,degree_eq_natDegree (mul_ne_zero X_ne_zero ih.1.ne_zero),high]
+      exact degree_C_le.trans_lt (by exact_mod_cast Nat.succ_pos _)
+    exact ⟨(monic_X.mul ih.1).add_of_right lt, by
+      rw [natDegree_add_eq_right_of_degree_lt lt,high]⟩
+
+end Deldor14.Star.Cyclo51
+
+/- Finite data for the real cyclotomic polynomials of orders up to 59.
+Inspired by the square-norm certificates of Zach Waddle. The kernel checks each
+polynomial product, shift, degree, and non-square norm from integer lists. -/
+namespace Deldor14.Star.Cyclo51
+open Polynomial
+set_option maxHeartbeats 4000000 in
+def rows : Array (List ℤ) := #[
+  [],
+  [-2],
+  [2],
+  [1],
+  [0],
+  [-1, 1],
+  [-1],
+  [-1, -2, 1],
+  [-2, 0],
+  [1, -3, 0],
+  [-1, -1],
+  [1, 3, -3, -4, 1],
+  [-3, 0],
+  [-1, 3, 6, -4, -5, 1],
+  [1, -2, -1],
+  [1, 4, -4, -1],
+  [2, 0, -4, 0],
+  [1, -4, -10, 10, 15, -6, -7, 1],
+  [-1, -3, 0],
+  [1, 5, -10, -20, 15, 21, -7, -8, 1],
+  [5, 0, -5, 0],
+  [1, -8, 8, 6, -6, -1],
+  [-1, 3, 3, -4, -1],
+  [-1, -6, 15, 35, -35, -56, 28, 36, -9, -10, 1],
+  [1, 0, -4, 0],
+  [-1, 5, 25, -5, -50, 1, 35, 0, -10, 0],
+  [-1, -3, 6, 4, -5, -1],
+  [1, 9, 0, -30, 0, 27, 0, -9, 0],
+  [-7, 0, 14, 0, -7, 0],
+  [-1, 7, 28, -56, -126, 126, 210, -120, -165, 55, 66, -12, -13, 1],
+  [1, -4, -4, 1],
+  [-1, -8, 28, 84, -126, -252, 210, 330, -165, -220, 66, 78, -13, -14, 1],
+  [2, 0, -16, 0, 20, 0, -8, 0],
+  [1, -12, 12, 43, -43, -34, 34, 10, -10, -1],
+  [1, 4, -10, -10, 15, 6, -7, -1],
+  [1, 8, -40, -46, 110, 71, -113, -43, 54, 11, -12, -1],
+  [-3, 0, 9, 0, -6, 0],
+  [-1, 9, 45, -120, -330, 462, 924, -792, -1287, 715, 1001, -364, -455, 105, 120, -16, -17, 1],
+  [-1, 5, 10, -20, -15, 21, 7, -8, -1],
+  [1, 12, -12, -79, 79, 103, -103, -53, 53, 12, -12, -1],
+  [1, 0, -12, 0, 19, 0, -8, 0],
+  [1, -10, -55, 165, 495, -792, -1716, 1716, 3003, -2002, -3003, 1365, 1820, -560, -680, 136, 153, -18, -19, 1],
+  [1, 8, 8, -6, -6, 1],
+  [1, 11, -55, -220, 495, 1287, -1716, -3432, 3003, 5005, -3003, -4368, 1820, 2380, -680, -816, 153, 171, -19, -20, 1],
+  [-11, 0, 55, 0, -77, 0, 44, 0, -11, 0],
+  [1, -12, -36, 31, 105, -27, -112, 9, 54, -1, -12, 0],
+  [1, -6, -15, 35, 35, -56, -28, 36, 9, -10, -1],
+  [-1, -12, 66, 286, -715, -2002, 3003, 6435, -6435, -11440, 8008, 12376, -6188, -8568, 3060, 3876, -969, -1140, 190, 210, -21, -22, 1],
+  [1, 0, -16, 0, 20, 0, -8, 0],
+  [-1, 14, 49, -371, -196, 2072, 294, -5147, -210, 7007, 77, -5733, -14, 2940, 1, -952, 0, 189, 0, -21, 0],
+  [-1, -5, 25, 5, -50, -1, 35, 0, -10, 0],
+  [1, 16, -16, -188, 188, 526, -526, -596, 596, 339, -339, -103, 103, 16, -16, -1],
+  [13, 0, -91, 0, 182, 0, -156, 0, 65, 0, -13, 0],
+  [-1, 13, 91, -364, -1365, 3003, 8008, -11440, -24310, 24310, 43758, -31824, -50388, 27132, 38760, -15504, -20349, 5985, 7315, -1540, -1771, 253, 276, -24, -25, 1],
+  [-1, 9, 0, -30, 0, 27, 0, -9, 0],
+  [1, 12, -108, -151, 951, 877, -2891, -2058, 4489, 2442, -4080, -1639, 2289, 650, -801, -151, 170, 19, -20, -1],
+  [1, 0, -24, 0, 86, 0, -104, 0, 53, 0, -12, 0],
+  [1, -20, 20, 265, -265, -989, 989, 1519, -1519, -1198, 1198, 531, -531, -134, 134, 18, -18, -1],
+  [-1, -7, 28, 56, -126, -126, 210, 120, -165, -55, 66, 12, -13, -1],
+  [1, 15, -105, -560, 1820, 6188, -12376, -31824, 43758, 92378, -92378, -167960, 125970, 203490, -116280, -170544, 74613, 100947, -33649, -42504, 10626, 12650, -2300, -2600, 325, 351, -27, -28, 1]
+]
+set_option maxHeartbeats 4000000 in
+def shiftedRows : Array (List ℤ) := #[
+  [],
+  [-5],
+  [-9],
+  [-8],
+  [-7],
+  [55, -15],
+  [-6],
+  [-377, 159, -22],
+  [47, -14],
+  [-323, 144, -21],
+  [41, -13],
+  [-17711, 12750, -3637, 514, -36],
+  [46, -14],
+  [121393, -105486, 37897, -7206, 765, -43],
+  [-281, 131, -20],
+  [1891, -1173, 269, -27],
+  [2207, -1316, 290, -28],
+  [5702887, -6655869, 3379044, -974697, 174735, -19937, 1414, -57],
+  [-321, 144, -21],
+  [-39088169, 51446925, -29942049, 10114098, -2185317, 313229, -29785, 1812, -64],
+  [2161, -1302, 289, -28],
+  [88831, -81591, 30955, -6208, 694, -41],
+  [-13201, 10090, -3055, 458, -34],
+  [-1836311903, 2964392796, -2166254294, 945910392, -274236795, 55429234, -7970368, 815382, -58161, 2755, -78],
+  [2206, -1316, 290, -28],
+  [228841255, -341125125, 227723500, -89652425, 23051300, -4044755, 490525, -40600, 2195, -70],
+  [90481, -82646, 31205, -6234, 695, -41],
+  [-33385283, 44791056, -26563005, 9139401, -2010582, 293292, -28371, 1755, -63],
+  [101521, -91434, 33971, -6664, 728, -42],
+  [591286729879, -1218956738475, 1162965616211, -680611350482, 272970902673, -79368664417, 17253149865, -2848536648, 358949811, -34355684, 2458599, -127570, 4537, -99],
+  [2521, -1459, 311, -29],
+  [-4052739537881, 8959000518075, -9214594231136, 5849505442347, -2563111725363, 821161467301, -198715889890, 36987570873, -5339066106, 597680479, -51465480, 3347695, -159237, 5229, -106],
+  [4870847, -5808824, 3011916, -886872, 162210, -18872, 1364, -56],
+  [196049701, -296972790, 201452410, -80586493, 21051715, -3752442, 462202, -38846, 2132, -69],
+  [4250681, -5149911, 2713890, -812487, 151145, -17891, 1316, -55],
+  [9182179441, -16658934678, 13795962273, -6895880638, 2317105432, -551383946, 95281122, -12047279, 1106187, -71936, 3145, -83],
+  [103681, -92736, 34260, -6692, 729, -42],
+  [1304969544928657, -3468370465774314, 4342285076813463, -3402625384275774, 1870113398305410, -765555631560167, 241908508809394, -60332574868320, 12039583426585, -1936733434350, 251745829335, -26379342990, 2211797952, -146380941, 7478780, -284632, 7599, -127],
+  [-29134601, 39641145, -23849115, 8326914, -1859437, 275401, -27055, 1700, -62],
+  [9210162781, -16697339706, 13819246310, -6904064991, 2318943433, -551657426, 95308082, -12048977, 1106249, -71937, 3145, -83],
+  [4868641, -5807508, 3011626, -886844, 162209, -18872, 1364, -56],
+  [61305790721611591, -181217438733968025, 253877256481481998, -224134274081147091, 139850851860411354, -65557095770547310, 23955397234642600, -6987450993353370, 1652350975931565, -319903725781185, 50984950005990, -6700929393795, 725006677122, -64224222804, 4612627816, -264461452, 11820780, -396987, 9424, -141],
+  [118441, -103853, 37563, -7176, 764, -43],
+  [-420196140727489673, 1304721945448537641, -1925056287654706963, 1795069324618684804, -1186808363557185150, 591601839703490230, -230809358814088410, 72208659049649820, -18410265621889785, 3866220162652575, -673115546953395, 97456530067260, -11734220022252, 1171345594986, -96314122540, 6454393536, -346869207, 14591202, -462821, 10410, -148],
+  [224056801, -335396460, 224742230, -88771732, 22889783, -4025924, 489162, -40544, 2194, -70],
+  [10716572161, -19185316992, 15677693352, -7732811208, 2564083998, -602160924, 102702761, -12818493, 1162026, -74619, 3222, -84],
+  [-1368706081, 2270359316, -1704721010, 764819328, -227808385, 47301898, -6986588, 734070, -53769, 2615, -76],
+  [-19740274219868223167, 67179571489855274424, -109130646950328608860, 112596020379261794080, -82819738045957154850, 46208524197932565420, -20314838466069246540, 7216080943295803140, -2106869427535021245, 511639268507030550, -104170095776965680, 17869859807466030, -2588973552829482, 316785622701366, -32659623616460, 2823090342294, -202978147068, 11996340441, -572898488, 21559965, -615517, 12529, -162],
+  [4870846, -5808824, 3011916, -886872, 162210, -18872, 1364, -56],
+  [-358890855025747337, 1123505560688668521, -1671180049017349591, 1570935653409341576, -1046957756371744399, 526044815911522068, -206853977407772142, 65221210699497571, -16757914982788812, 3546316469467954, -622130599305607, 90755600797141, -11009213349575, 1107121372280, -91701494725, 6189932084, -335048427, 14194215, -453397, 10269, -147],
+  [228811001, -341102575, 227716850, -89651455, 23051230, -4044753, 490525, -40600, 2195, -70],
+  [20326825084231, -48971597873571, 55143720180015, -38523511844994, 18687974638752, -6675052562935, 1815952769903, -383832662751, 63702640415, -8329075695, 855101755, -68207680, 4143970, -185383, 5759, -111],
+  [10525900321, -18894711444, 15479514106, -7653178876, 2543204797, -598428292, 102241970, -12779704, 1159895, -74550, 3221, -84],
+  [6356306993006846248183, -24474240289955688532551, 45228218493905722774485, -53401018864202365208580, 45240565892006797858350, -29278768588171172100870, 15047192034523714209690, -6302106561606767788140, 2190346091135283304245, -639989260395862227675, 158679113441776591455, -33605876015140388580, 6106119851102834232, -954254249626814766, 128371828277754160, -14853492256085624, 1474521679472478, -125036195207441, 8997577757938, -544340987190, 27330040122, -1118326539, 36342162, -902276, 16075, -183],
+  [-33385281, 44791056, -26563005, 9139401, -2010582, 293292, -28371, 1755, -63],
+  [44724928276576801, -134480662783780500, 191622682668556458, -172045764714903376, 109159263653786863, -52025956118853530, 19326436180440697, -5730024787162599, 1377110796676967, -270927202449266, 43871084744565, -5857460442644, 643706402535, -57909325249, 4223116748, -245817197, 11152969, -380140, 9157, -139],
+  [10745088481, -19224300396, 15701244710, -7741063764, 2565932371, -602435344, 102729768, -12820192, 1162088, -74620, 3222, -84],
+  [954928097357851, -2585327230964745, 3296791767732105, -2631054159852369, 1472588248585455, -613817333825834, 197473969540234, -50136074257227, 10183318162591, -1667105268793, 220497221449, -23506141357, 2004771511, -134936164, 7010004, -271226, 7360, -125],
+  [440719107401, -928144225505, 904592020535, -540797088286, 221557632583, -65801527603, 14609948745, -2463587400, 317039943, -30986824, 2264251, -119950, 4355, -97],
+  [-2046711111473984623691759, 8795946400787227711945350, -18221150272997455324674497, 24228194294457282720326274, -23231392942595259410066106, 17109008379958053767671785, -10064771099571163809032850, 4856161455971452190149920, -1958062480660677420942165, 668877297159945763852710, -195552398330608163445315, 49300987102079616911670, -10777664791934946396972, 2050953319912744534329, -340582700880374456816, 49413824048631771992, -6263761306147972830, 692887930360044657, -66720879100036714, 5571210752287026, -401170702583266, 24724365399525, -1291013027370, 56338701640, -2016615835, 57663684, -1266525, 20062, -204]
+]
+
+def psi (n : ℕ) : List ℤ := rows[n]?.getD [] ++ [1]
+def gc (n : ℕ) : List ℤ := shiftedRows[n]?.getD [] ++ [1]
+def width (n : ℕ) := (shiftedRows[n]?.getD []).length
+
+def codes (n : ℕ) : List ℕ :=
+  ((List.range (n+1)).filter (fun d => decide (0<d ∧ n%d=0))).flatMap
+    (fun d => if d≤2 then [d] else [d,d])
+
+def vpair : ℕ → List ℤ × List ℤ
+  | 0 => ([2],[0,1])
+  | n+1 => let q := vpair n; (q.2,plus (shift q.2) (q.1.map ((-1)*·)))
+
+theorem vpair_ok (n : ℕ) : vpair n = (vs n,vs (n+1)) := by
+  induction n with
+  | zero => rfl
+  | succ n ih => simp only [vpair,ih,vs]
+
+set_option maxHeartbeats 8000000 in
+set_option maxRecDepth 10000 in
+private theorem data : ∀ i : Fin 59,
+    let n := i.val+1
+    plus (vpair n).1 [-2]=prodCodes ((codes n).map psi) ∧
+    gc n = (substAt (psi n) [7,-1]).map (((-1:ℤ)^width n)*·) ∧
+    (3≤n → 2*width n=n.totient) ∧
+    (n≠2 → ¬ IsSquare (((-1:ℤ)^width n) * (gc n).headD 0)) := by decide +kernel
+
+theorem data_at (n : ℕ) (pos : 0<n) (le : n≤59) :
+    plus (vs n) [-2]=prodCodes ((codes n).map psi) ∧
+    gc n = (substAt (psi n) [7,-1]).map (((-1:ℤ)^width n)*·) ∧
+    (3≤n → 2*width n=n.totient) ∧
+    (n≠2 → ¬ IsSquare (((-1:ℤ)^width n) * (gc n).headD 0)) := by
+  have h := data (⟨n-1,by omega⟩)
+  simpa only [show n-1+1=n by omega,vpair_ok] using h
+
+theorem mem_codes {n k : ℕ} : k∈codes n ↔ 0<k ∧ k≤n ∧ n%k=0 := by
+  simp only [codes,List.mem_flatMap,List.mem_filter,List.mem_range,decide_eq_true_eq]
+  constructor
+  · rintro ⟨j,⟨lt,hj,r⟩,mem⟩
+    have eq : k=j := by split_ifs at mem <;> simpa using mem
+    subst k
+    exact ⟨hj,by omega,r⟩
+  · rintro ⟨hp,hle,hr⟩
+    exact ⟨k,⟨by omega,hp,hr⟩,by split_ifs <;> simp⟩
+
+theorem factored {R : Type*} [Field R] (x : R) (n : ℕ) (pos : 0<n) (bound : n≤59) :
+    val x (vs n)=2 ↔ ∃ k∈codes n, val x (psi k)=0 := by
+  have eq := congrArg (val x) (data_at n pos bound).1
+  simp [val_plus,val_prod,List.map_map,Function.comp_def,val] at eq
+  constructor
+  · intro h
+    have z : ((codes n).map fun k => val x (psi k)).prod=0 := by rw [←eq,h]; ring
+    simpa using z
+  · intro h
+    have z : ((codes n).map fun k => val x (psi k)).prod=0 := by simpa using h
+    rw [z] at eq
+    linear_combination eq
+
+theorem at_primitive {n : ℕ} (pos : 0<n) (bound : n≤59)
+    {z : ℂ} (p : IsPrimitiveRoot z n) : val (z+z⁻¹) (psi n)=0 := by
+  have zn : z≠0 := p.ne_zero pos.ne'
+  have v (k : ℕ) : val (z+z⁻¹) (vs k)=2 ↔ z^k=1 := by
+    rw [vs_primitive z zn,inv_pow]
+    constructor
+    · intro h
+      have y := pow_ne_zero k zn
+      field_simp [y] at h
+      have zero : (z^k-1)^2=0 := by linear_combination h
+      exact sub_eq_zero.mp (pow_eq_zero_iff (by decide : 2≠0) |>.mp zero)
+    · intro h
+      rw [h]; norm_num
+  obtain ⟨k,hk,zero⟩ := (factored _ n pos bound).mp ((v n).mpr p.pow_eq_one)
+  obtain ⟨kp,kle,_⟩ := mem_codes.mp hk
+  have selfmem : k∈codes k := mem_codes.mpr ⟨kp,le_rfl,Nat.mod_self _⟩
+  have zk := (v k).mp ((factored _ k kp (kle.trans bound)).mpr ⟨k,selfmem,zero⟩)
+  have nk := p.dvd_of_pow_eq_one k zk
+  rwa [Nat.le_antisymm kle (Nat.le_of_dvd kp nk)] at zero
+
+end Deldor14.Star.Cyclo51
+
+/- The real cyclotomic generator has degree at least half the totient.
+Adjoining a primitive root to its sum with its inverse is quadratic. -/
+namespace Deldor14.Star.Poly51
+open Polynomial IntermediateField
+open scoped Polynomial IntermediateField
+
+theorem totient_le_twice_degree {k : ℕ} {ζ : ℂ} (prim : IsPrimitiveRoot ζ k)
+    (f : ℚ[X]) (nf : f≠0) (van : aeval (ζ+ζ⁻¹) f=0) :
+    Nat.totient k ≤ 2*f.natDegree := by
+  classical
+  rcases k.eq_zero_or_pos with rfl|kp
+  · simp
+  let z := ζ+ζ⁻¹
+  let L := ℚ⟮z⟯
+  let M := L⟮ζ⟯
+  have iz : IsIntegral ℚ z := IsAlgebraic.isIntegral ⟨f,nf,van⟩
+  let : FiniteDimensional ℚ L := IntermediateField.adjoin.finiteDimensional iz
+  let P : L[X] := X^2-C (AdjoinSimple.gen ℚ z)*X+1
+  have z0 : ζ≠0 := prim.ne_zero kp.ne'
+  have root : aeval ζ P=0 := by
+    simp [P,z]
+    field_simp
+    ring
+  have degP : P.natDegree=2 := by
+    simpa [P,sub_eq_add_neg] using
+      (natDegree_quadratic (a:=(1:L)) (b:= -(AdjoinSimple.gen ℚ z)) (c:=(1:L)) one_ne_zero)
+  have p0 : P≠0 := by intro e; simp [e] at degP
+  have iζ : IsIntegral L ζ := IsAlgebraic.isIntegral ⟨P,p0,root⟩
+  let : FiniteDimensional L M := IntermediateField.adjoin.finiteDimensional iζ
+  let : FiniteDimensional ℚ M := Module.Finite.trans L M
+  have lbound : Module.finrank ℚ L ≤ f.natDegree := by
+    rw [show Module.finrank ℚ L = (minpoly ℚ z).natDegree from IntermediateField.adjoin.finrank iz]
+    exact natDegree_le_of_dvd (minpoly.dvd ℚ z van) nf
+  have mbound : Module.finrank L M ≤ 2 := by
+    rw [show Module.finrank L M = (minpoly L ζ).natDegree from IntermediateField.adjoin.finrank iζ,←degP]
+    exact natDegree_le_of_dvd (minpoly.dvd L ζ root) p0
+  let y : M := AdjoinSimple.gen L ζ
+  have eq : minpoly ℚ y = minpoly ℚ ζ := by
+    rw [← minpoly.algebraMap_eq (algebraMap M ℂ).injective]
+    rfl
+  have cy : (minpoly ℚ ζ).natDegree=Nat.totient k := by
+    rw [← cyclotomic_eq_minpoly_rat prim kp,natDegree_cyclotomic]
+  have low := minpoly.natDegree_le (A:=ℚ) (x:=y)
+  rw [eq,cy,← Module.finrank_mul_finrank ℚ L M] at low
+  exact low.trans (by simpa [Nat.mul_comm] using Nat.mul_le_mul lbound mbound)
+
+theorem irreducible_at_half_totient {k : ℕ} {ζ : ℂ} (prim : IsPrimitiveRoot ζ k)
+    (g : ℚ[X]) (mon : g.Monic) (van : aeval (ζ+ζ⁻¹) g=0)
+    (degree : 2*g.natDegree=k.totient) : Irreducible g := by
+  let z := ζ+ζ⁻¹
+  have integral : IsIntegral ℚ z := ⟨g,mon,van⟩
+  have bound := totient_le_twice_degree prim (minpoly ℚ z) (minpoly.ne_zero integral) (minpoly.aeval ℚ z)
+  have eq : minpoly ℚ z = g := eq_of_dvd_of_natDegree_le_of_leadingCoeff
+    (minpoly.dvd ℚ z van) (by omega) ((minpoly.monic integral).trans mon.symm)
+  rw [←eq]
+  exact minpoly.irreducible integral
+
+end Deldor14.Star.Poly51
+namespace Deldor14.Star.Poly51
+open Polynomial
+open scoped Polynomial
+
+theorem totient_le_twice_shift_degree {k : ℕ} {ζ : ℂ} (prim : IsPrimitiveRoot ζ k)
+    (c : ℚ) (f : ℚ[X]) (nf : f≠0) (van : aeval ((c:ℂ)-(ζ+ζ⁻¹)) f=0) :
+    k.totient ≤ 2*f.natDegree := by
+  let h : ℚ[X] := C c-X
+  have hd : h.natDegree=1 := by
+    exact (natDegree_sub_eq_right_of_natDegree_lt (by simp : (C c).natDegree < (X:ℚ[X]).natDegree)).trans natDegree_X
+  have nz : f.comp h≠0 := by
+    intro eq
+    rcases comp_eq_zero_iff.mp eq with e|⟨_,eh⟩
+    · exact nf e
+    · have e := congrArg natDegree eh
+      simp only [hd,natDegree_C] at e
+      omega
+  have root : aeval (ζ+ζ⁻¹) (f.comp h) = 0 := by
+    simpa [aeval_comp,h] using van
+  have bound := totient_le_twice_degree prim (f.comp h) nz root
+  simpa [natDegree_comp,hd] using bound
+
+theorem irreducible_at_shifted_half_totient {k : ℕ} {ζ : ℂ} (prim : IsPrimitiveRoot ζ k)
+    (c : ℚ) (g : ℚ[X]) (mon : g.Monic) (van : aeval ((c:ℂ)-(ζ+ζ⁻¹)) g=0)
+    (degree : 2*g.natDegree=k.totient) : Irreducible g := by
+  let z := (c:ℂ)-(ζ+ζ⁻¹)
+  have integral : IsIntegral ℚ z := ⟨g,mon,van⟩
+  have bound := totient_le_twice_shift_degree prim c (minpoly ℚ z) (minpoly.ne_zero integral) (minpoly.aeval ℚ z)
+  have eq : minpoly ℚ z = g := eq_of_dvd_of_natDegree_le_of_leadingCoeff
+    (minpoly.dvd ℚ z van) (by omega) ((minpoly.monic integral).trans mon.symm)
+  rw [←eq]
+  exact minpoly.irreducible integral
+end Deldor14.Star.Poly51
+
+/- A norm obstruction to reducibility after substituting a square.
+Capelli's composition criterion reduces the question to the root of the
+inner quadratic. Its square would give a square norm in the ground field. -/
+namespace Deldor14.Star.Poly51
+open Polynomial IntermediateField
+open scoped Polynomial
+
+theorem irreducible_comp_square {K : Type*} [Field K] (g : K[X])
+    (mon : g.Monic) (irr : Irreducible g)
+    (ns : ¬IsSquare ((-1:K)^g.natDegree * g.coeff 0)) :
+    Irreducible (g.comp (X^2)) := by
+  apply Polynomial.irreducible_comp mon (monic_X_pow 2) irr
+  intro E _ _ x min
+  rw [Polynomial.map_pow,map_X]
+  apply X_pow_sub_C_irreducible_of_prime Nat.prime_two
+  intro b eq
+  have integral : IsIntegral K x := ⟨g,mon,by rw [← min]; exact minpoly.aeval K x⟩
+  have norm := Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly (adjoin.powerBasis integral)
+  rw [adjoin.powerBasis_dim,adjoin.powerBasis_gen,minpoly_gen,min] at norm
+  apply ns
+  refine ⟨Algebra.norm K b,?_⟩
+  rw [←norm,←eq,map_pow,pow_two]
+
+end Deldor14.Star.Poly51
+namespace Deldor14.Star.Poly51
+open Polynomial
+open scoped Polynomial
+
+theorem minpoly_even_of_nonsquare_norm {E : Type*} [Field E] [Algebra ℚ E]
+    (g : ℚ[X]) (mon : g.Monic) (irr : Irreducible g)
+    (ns : ¬IsSquare ((-1:ℚ)^g.natDegree*g.coeff 0)) (θ : E)
+    (van : aeval (θ^2) g=0) :
+    (minpoly ℚ θ).comp (-X)=minpoly ℚ θ := by
+  have pmon : (g.comp (X^2)).Monic := mon.comp (monic_X_pow 2) (by simp)
+  have root : aeval θ (g.comp (X^2))=0 := by simpa [aeval_comp] using van
+  have poly := minpoly.eq_of_irreducible_of_monic (irreducible_comp_square g mon irr ns) root pmon
+  rw [←poly,comp_assoc]
+  simp
+
+end Deldor14.Star.Poly51
+
+namespace Deldor14.Star.Cyclo51
+open Polynomial
+theorem val_vieta (x : ℝ) (n : ℕ) : val x (vs n) = Waddle51.vieta x n := by
+  induction n using Nat.twoStepInduction with
+  | zero => norm_num [vs,val,Waddle51.vieta]
+  | one => norm_num [vs,val,Waddle51.vieta]
+  | more n ih ih' => rw [val_vs,ih,ih',Waddle51.vieta]
+
+theorem coeff_zero_code (a : List ℤ) : (poly a).coeff 0 = ((a.headD 0 : ℤ):ℚ) := by
+  cases a with
+  | nil => simp [poly,val]
+  | cons a as =>
+    change ((a : ℚ[X])+X*poly as).coeff 0=(a:ℚ)
+    simp
+
+theorem eval_g {R : Type*} [Field R] [Algebra ℚ R] (x : R) {n : ℕ} (pos : 0<n) (le : n≤59) :
+    aeval x (poly (gc n)) = ((-1:R)^width n)*val (7-x) (psi n) := by
+  rw [aeval_poly,(data_at n pos le).2.1,val_scale,val_subst]
+  push_cast
+  congr 2
+  simp [val]
+  ring
+
+theorem classify (θ : ℝ) {d : ℕ} (pos : 0<d) (le : d≤59) (v : Waddle51.vieta (7-θ^2) d=2) :
+    θ=3 ∨ θ= -3 ∨ (minpoly ℚ θ).comp (-X)=minpoly ℚ θ := by
+  rw [←val_vieta] at v
+  obtain ⟨k,hk,root⟩ := (factored _ d pos le).mp v
+  obtain ⟨kp,kd,_⟩ := mem_codes.mp hk
+  have bound := kd.trans le
+  by_cases two : k=2
+  · subst k
+    change val (7-θ^2) [2,1] = 0 at root
+    norm_num [val] at root
+    have zero : (θ-3)*(θ+3)=0 := by nlinarith
+    rcases mul_eq_zero.mp zero with plus|minus
+    · exact Or.inl (by linarith)
+    · exact Or.inr (Or.inl (by linarith))
+  right; right
+  have mon : (poly (gc k)).Monic := (monic_code (shiftedRows[k]?.getD [])).1
+  have degree : (poly (gc k)).natDegree=width k := (monic_code _).2
+  have irreducible : Irreducible (poly (gc k)) := by
+    by_cases one : k=1
+    · subst k
+      apply Polynomial.irreducible_of_degree_eq_one
+      rw [degree_eq_natDegree mon.ne_zero,degree]
+      rfl
+    · let z := Complex.exp (2*Real.pi*Complex.I / k)
+      have prim : IsPrimitiveRoot z k := Complex.isPrimitiveRoot_exp k kp.ne'
+      apply Poly51.irreducible_at_shifted_half_totient prim 7 _ mon
+      · rw [eval_g _ kp bound]
+        push_cast
+        rw [show (7:ℂ)-(7-(z+z⁻¹)) = z+z⁻¹ by ring, at_primitive kp bound prim,mul_zero]
+      · rw [degree]
+        exact (data_at k kp bound).2.2.1 (by omega)
+  apply Poly51.minpoly_even_of_nonsquare_norm _ mon irreducible _ θ
+  · rw [eval_g _ kp bound,root,mul_zero]
+  · rw [degree,coeff_zero_code]
+    intro sq
+    have h : IsSquare ((((-1:ℤ)^width k*(gc k).headD 0 : ℤ):ℚ)) := by push_cast; exact sq
+    exact (data_at k kp bound).2.2.2 two (Rat.isSquare_intCast_iff.mp h)
+
+end Deldor14.Star.Cyclo51
+
+open Polynomial
+open scoped Polynomial
+
+namespace Erdos552Trace51
+
+private lemma coeff_comp_neg (p : ℚ[X]) (j : ℕ) :
+    (p.comp (-X)).coeff j = (-1 : ℚ)^j * p.coeff j := by
+  induction p using Polynomial.induction_on' with
+  | add f g hf hg => simp [add_comp, hf, hg, mul_add]
+  | monomial k a =>
+    have negPow : (-(X : ℚ[X]))^k = C ((-1 : ℚ)^k) * X^k := by
+      rw [map_pow, ← mul_pow]
+      simp
+    simp only [← C_mul_X_pow_eq_monomial, mul_comp, C_comp, pow_comp, X_comp,
+      negPow, ← mul_assoc, ← map_mul]
+    rw [C_mul_X_pow_eq_monomial, C_mul_X_pow_eq_monomial, coeff_monomial, coeff_monomial]
+    split <;> rename_i h
+    · subst_vars
+      exact mul_comm _ _
+    · simp
+
+private lemma nextCoeff_even {p : ℚ[X]} (hm : p.Monic)
+    (he : p.comp (-X) = p) : p.nextCoeff = 0 := by
+  have c (j : ℕ) : p.coeff j = (-1 : ℚ)^j * p.coeff j := by
+    simpa only [he] using coeff_comp_neg p j
+  by_cases h : p.natDegree = 0
+  · simp [nextCoeff, h]
+  have hc := c p.natDegree
+  rw [coeff_natDegree, hm.leadingCoeff, mul_one] at hc
+  have d : p.natDegree - 1 + 1 = p.natDegree := by omega
+  have hs : (-1 : ℚ)^(p.natDegree - 1) = -1 := by
+    nth_rw 1 [← d] at hc
+    rw [pow_succ] at hc
+    linarith
+  have hh := c (p.natDegree - 1)
+  rw [hs] at hh
+  rw [nextCoeff_of_natDegree_pos (Nat.pos_of_ne_zero h)]
+  linarith
+
+theorem three_divides_nextCoeff {Q : ℚ[X]} (hm : Q.Monic)
+    (clas : ∀ p : ℚ[X], Irreducible p → p.Monic → p ∣ Q →
+      p = X - C 3 ∨ p = X - C (-3) ∨ p.comp (-X) = p) :
+    ∃ z : ℤ, Q.nextCoeff = 3 * (z : ℚ) := by
+  classical
+  let L := UniqueFactorizationMonoid.normalizedFactors Q
+  have hpL : ∀ p ∈ L, p.Monic ∧ ∃ a : ℤ, p.nextCoeff = 3 * (a : ℚ) := by
+    intro p hp
+    obtain ⟨hi,hmon,hd⟩ := (Polynomial.mem_normalizedFactors_iff hm.ne_zero).mp hp
+    refine ⟨hmon, ?_⟩
+    rcases clas p hi hmon hd with rfl | rfl | he
+    · exact ⟨-1, by norm_num [nextCoeff_X_sub_C]⟩
+    · exact ⟨1, by norm_num [nextCoeff_X_sub_C]⟩
+    · exact ⟨0, by simp [nextCoeff_even hmon he]⟩
+  have sum (s : Multiset ℚ[X])
+      (hs : ∀ p ∈ s, p.Monic ∧ ∃ a : ℤ, p.nextCoeff = 3 * (a : ℚ)) :
+      s.prod.Monic ∧ ∃ z : ℤ, s.prod.nextCoeff = 3 * (z : ℚ) := by
+    induction s using Multiset.induction_on with
+    | empty => exact ⟨monic_one, 0, by simp [nextCoeff]⟩
+    | cons p t ih =>
+      obtain ⟨hp, a, ha⟩ := hs p (by simp)
+      obtain ⟨ht, z, hz⟩ := ih (fun q hq => hs q (by simp [hq]))
+      rw [Multiset.prod_cons]
+      refine ⟨hp.mul ht, a+z, ?_⟩
+      rw [hp.nextCoeff_mul ht, ha, hz, Int.cast_add, mul_add]
+  have hp : L.prod = Q := (UniqueFactorizationMonoid.prod_normalizedFactors_eq hm.ne_zero).trans hm.normalize_eq_self
+  simpa only [hp] using (sum L hpL).2
+
+
+theorem trace_obstruction {F Q : ℚ[X]} (hm : Q.Monic)
+    (eq : F = (X - C 8) * Q) (h8 : Q.eval 8 ≠ 0)
+    (splits : (F.map (algebraMap ℚ ℝ)).Splits)
+    (classify : ∀ θ : ℝ, (F.map (algebraMap ℚ ℝ)).IsRoot θ → θ ≠ 8 →
+      θ = 3 ∨ θ = -3 ∨ (minpoly ℚ θ).comp (-X) = minpoly ℚ θ) :
+    F.nextCoeff ≠ 0 := by
+  have hF : F.Monic := eq ▸ (monic_X_sub_C _).mul hm
+  have cls (p : ℚ[X]) (hi : Irreducible p) (hp : p.Monic) (hd : p ∣ Q) :
+      p = X - C 3 ∨ p = X - C (-3) ∨ p.comp (-X) = p := by
+    have hdF : p ∣ F := eq ▸ dvd_mul_of_dvd_right hd _
+    let ι := algebraMap ℚ ℝ
+    have hmF : p.map ι ∣ F.map ι := Polynomial.map_dvd ι hdF
+    have hs : (p.map ι).Splits := splits.of_dvd (hF.map ι).ne_zero hmF
+    have hn : (p.map ι).natDegree ≠ 0 := by
+      rw [hp.natDegree_map ι]
+      exact hi.natDegree_pos.ne'
+    obtain ⟨θ,hθ⟩ := hs.exists_eval_eq_zero (degree_ne_of_natDegree_ne hn)
+    have hr : (p.map ι).IsRoot θ := hθ
+    have hnr : θ ≠ 8 := by
+      rintro rfl
+      have H := hr.dvd (Polynomial.map_dvd ι hd)
+      have h : (Q.map ι).eval (ι 8) = 0 := by simpa [ι] using H
+      rw [eval_map_apply] at h
+      exact h8 (ι.injective (by simpa using h))
+    have hmnp : p = minpoly ℚ θ :=
+      minpoly.eq_of_irreducible_of_monic hi (by simpa [aeval_def, eval_map, ι] using hθ) hp
+    rcases classify θ (hr.dvd hmF) hnr with rfl | rfl | he
+    · left
+      apply hmnp.trans
+      simpa [ι] using minpoly.eq_X_sub_C_of_algebraMap_inj (B := ℝ) (3 : ℚ) ι.injective
+    · right; left
+      apply hmnp.trans
+      simpa [ι] using minpoly.eq_X_sub_C_of_algebraMap_inj (B := ℝ) (-3 : ℚ) ι.injective
+    · exact Or.inr (Or.inr (hmnp ▸ he))
+  obtain ⟨z,hz⟩ := three_divides_nextCoeff hm cls
+  rw [eq, (monic_X_sub_C _).nextCoeff_mul hm, nextCoeff_X_sub_C, hz]
+  intro h
+  have H : (-8 : ℤ) + 3 * z = 0 := by exact_mod_cast h
+  omega
+
+
+theorem obstruction_of_simple {F : ℚ[X]} (hm : F.Monic) (simple : F.rootMultiplicity 8 = 1)
+    (split : (F.map (algebraMap ℚ ℝ)).Splits)
+    (classify : ∀ θ : ℝ, (F.map (algebraMap ℚ ℝ)).IsRoot θ → θ ≠ 8 →
+      θ = 3 ∨ θ = -3 ∨ (minpoly ℚ θ).comp (-X) = minpoly ℚ θ) :
+    F.nextCoeff ≠ 0 := by
+  obtain ⟨Q,he,hn⟩ := F.exists_eq_pow_rootMultiplicity_mul_and_not_dvd hm.ne_zero 8
+  rw [simple, pow_one] at he
+  have mon : Q.Monic := (monic_X_sub_C (8 : ℚ)).of_mul_monic_left (he ▸ hm)
+  exact trace_obstruction mon he (fun h => hn (dvd_iff_isRoot.mpr h)) split classify
+
+end Erdos552Trace51
+
+theorem Deldor14.Star.Waddle51.ramsey_star_51 : Deldor14.Star.number 51 = 59 :=
+  Deldor14.Star.Waddle51.star_51_of_classification Deldor14.Star.Cyclo51.classify Erdos552Trace51.trace_obstruction
+
 theorem OMA.solution : OMA.R_Erdos552_erdos_552_parts_ii_R1.H1 := by
   intro p hp
   exact Deldor14.Star.prime_square hp
