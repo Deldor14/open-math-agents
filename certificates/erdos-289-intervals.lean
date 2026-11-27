@@ -194,7 +194,39 @@ theorem example_29 : Witness 29 ![18,22,25,34,50,54,62,65,69,77,80,84,87,90,95,9
 
 #print axioms example_29
 
-theorem all_7_to_29 (k : ℕ) (lo : 7 ≤ k) (hi : k ≤ 29) :
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 8000000 in
+theorem example_30 : Witness 30 ![19,22,25,28,34,50,55,62,65,69,77,80,84,87,90,95,99,114,119,140,143,153,161,170,175,188,203,224,230,234] ![20,23,26,30,36,52,56,63,66,70,78,81,85,88,93,96,100,116,120,141,144,155,162,171,176,189,204,225,231,235] := by
+  unfold Witness
+  decide +kernel
+
+#print axioms example_30
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 8000000 in
+theorem example_31 : Witness 31 ![12,17,26,30,36,40,60,68,75,81,116,122,128,182,186,204,208,215,221,246,258,300,304,350,369,377,384,405,450,459,475] ![13,19,28,32,37,43,61,70,76,82,117,123,129,183,187,205,210,216,222,248,259,301,305,351,370,378,385,406,451,460,476] := by
+  unfold Witness
+  decide +kernel
+
+#print axioms example_31
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 8000000 in
+theorem example_32 : Witness 32 ![13,22,27,32,41,48,51,56,62,68,77,93,114,140,143,160,186,195,208,216,231,246,265,272,287,328,341,351,368,376,423,440] ![14,24,30,33,42,49,53,58,63,69,78,95,117,141,144,161,187,196,209,217,232,248,266,273,288,329,342,352,369,378,424,442] := by
+  unfold Witness
+  decide +kernel
+
+#print axioms example_32
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 8000000 in
+theorem example_33 : Witness 33 ![9,18,28,46,52,60,77,90,115,122,143,154,164,170,175,182,186,189,203,234,245,252,264,287,304,319,368,376,423,434,440,464,475] ![10,21,29,48,54,64,78,92,116,124,144,155,165,171,176,184,187,190,205,235,246,253,266,288,306,320,369,377,425,435,442,465,476] := by
+  unfold Witness
+  decide +kernel
+
+#print axioms example_33
+
+theorem all_7_to_33 (k : ℕ) (lo : 7 ≤ k) (hi : k ≤ 33) :
     ∃ a b : Fin k → ℕ, Witness k a b := by
   interval_cases k
   · exact ⟨_,_,example_7⟩
@@ -220,7 +252,11 @@ theorem all_7_to_29 (k : ℕ) (lo : 7 ≤ k) (hi : k ≤ 29) :
   · exact ⟨_,_,example_27⟩
   · exact ⟨_,_,example_28⟩
   · exact ⟨_,_,example_29⟩
+  · exact ⟨_,_,example_30⟩
+  · exact ⟨_,_,example_31⟩
+  · exact ⟨_,_,example_32⟩
+  · exact ⟨_,_,example_33⟩
 
-#print axioms all_7_to_29
+#print axioms all_7_to_33
 
 end Deldor14.Erdos289
