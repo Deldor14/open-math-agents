@@ -44,7 +44,7 @@ private theorem carry {b x y z i j k : ℕ} (bb : 0 < b)
   refine ⟨e,?_⟩
   exact Nat.eq_of_mul_eq_mul_left bb (by omega)
 
-private theorem decode {f : ℕ → ℕ}
+theorem decode {f : ℕ → ℕ}
     (convex : ∀ x < 31, ∀ y < 31, ∀ z < 31, x+z=y+y →
       f y+f y ≤ f x+f z ∧ (f x+f z=f y+f y → x=y))
     {ds xs ys zs : List ℕ} {i j k : ℕ} (small : ∀ d ∈ ds, d ≤ 31)
