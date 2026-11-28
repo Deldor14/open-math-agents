@@ -43,3 +43,5 @@ The rational profile test can be checked exactly. If r=a/b is reduced, the lower
 The local product and scale-crossing lemmas are verified in Lean. The global construction and the simultaneous statement are written proofs. No counterexample to a growth statement about R itself is asserted.
 
 [RegularMajorants.md](RegularMajorants.md) gives an optimal regularly varying concave majorant preserving the same product, and computes the sharp constant 987/128 for one choice of these transitions.
+
+[ProfileDilation.md](ProfileDilation.md) reduces all real homogeneous multiplier tests to eight dyadic values, checks the archived modular records, and sharpens the product output to mn+(m−1)(n−1).
