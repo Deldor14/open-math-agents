@@ -73,10 +73,9 @@ class Block:
             valid = now
         return out
 
-    def energy(self,z,s,t,T):
+    def charts(self,z,s,t):
         n,k = self.n,self.k
-        # Extra cuts at every j/(4k) also in the lower bands change area by O(1/T).
-        if not (0<z<F(3,4)) or near_line(z,4*k,T):
+        if not (0<z<F(3,4)):
             return None
         if z<F(1,2):
             x = s
@@ -101,6 +100,17 @@ class Block:
             if x>=F(1,2) or (n*dt).denominator==1 or not (kept >> int(n*dt))&1:
                 return None
             Q = ((dt-F(start,n))%1)**2
+        return x,Q
+
+    def energy(self,z,s,t,T):
+        n,k = self.n,self.k
+        # The extra outer half-band cuts below the seam cost O(1/T) in volume.
+        if near_line(z,4*k,T):
+            return None
+        chart = self.charts(z,s,t)
+        if chart is None:
+            return None
+        x,Q=chart
         if near_line(x,n,T):
             return None
         B = 16+8*(n+1)+3
