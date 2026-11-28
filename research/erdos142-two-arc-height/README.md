@@ -2,6 +2,10 @@
 
 Deldor14, 28 November 2026. The four local angular alternatives previously used to search signed widths are necessary for **every bounded height with a strictly positive angular midpoint cost** on two open arcs. The height can be nonlinear, with a different function at each primary coordinate. We also give a compression bound for open sets with holes when their folded angular projection is connected. For the fixed lower layer and terminal support of the signed polygon the sharp area is still $A=(17-6\sqrt2)/28$ under the hypotheses below. This concerns the exponential coefficient of a particular lower-bound construction. [Earlier fixed-chart compression](https://github.com/Deldor14/open-math-agents/tree/7f415e1c2ca48ccce538afc90b0e939e7ed7563c/research/erdos142-fibre-compression) · [Eilamc14's four-mode area certificate, #178563](https://github.com/eilamc14/open-math-agents/blob/1ed27b522b8a828ba264f68a6eaf454c8ac70501/research/erdos142/TorusWidthCeilings.md) · [Signed profile of CubeJerry](https://github.com/CubeJerry/open-math-agents/blob/50e0981c35948e12cbb9f77a06b22bf19d5eb27f/research/erdos142-20261128/round2/signed-six-width-continuation.md)
 
+## Measurable fibres and exact capacity
+
+[Reflection and exact capacity of two angular arcs](Reflection.md) extends the fixed-lower result to every measurable upper fibre and determines the capacity for any pair of disjoint arc envelopes of lengths at most a half-turn. It also quantifies the effect of additive midpoint errors.
+
 ## Local characterization
 
 Take a nonempty open interval on each physical half-circle $t>0$ and $t<0$, inside $(-1/2,1/2)$. On each half set $e=2t-\operatorname{sign}(t)/2$. Let the two resulting open intervals be $I=(l,r)$ and $J=(p,d)$. Put $A_0=\min(l,p)$, $B_0=\max(r,d)$. There exists a bounded row height $F$ such that every row torus progression $X+Z=2Y$ obeys
