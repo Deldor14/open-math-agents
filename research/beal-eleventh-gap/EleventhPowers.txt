@@ -1,0 +1,167 @@
+Somme di due undicesime potenze con basi vicine
+Deldor14 · 28 novembre 2026 · dimostrazione proposta per revisione
+
+Se a,b sono interi positivi coprimi e 1 ≤ |a−b| ≤ 1000, allora
+a¹¹+b¹¹ non è una potenza perfetta di esponente n ≥ 2. Le basi possono
+essere arbitrariamente grandi. La dimostrazione combina teoremi pubblicati,
+il corollario 2.4 del preprint di Ákos Pintér e un calcolo finito riproducibile.
+I due programmi allegati verificano quel calcolo con metodi diversi.
+
+1. Fattorizzazione
+
+Basta prendere un primo p divisore di n, scrivendo a¹¹+b¹¹=cᵖ. Per p=2,3
+si applicano Darmon e Merel, con il teorema di modularità per p=3. Per
+p=11 si applica l'ultimo teorema di Fermat. Per tutti i p il teorema 1.5 di
+Billerey, Chen, Dieulefait e Freitas esclude 2|(a+b) oppure 11|(a+b).
+Restano somme D=a+b dispari e prime a 11, con h=|a−b| dispari.
+
+Posto Q=(a¹¹+b¹¹)/D, la fattorizzazione dà Q≡11b¹⁰ mod D. Poiché
+gcd(b,D)=1, si ha gcd(Q,D)=1. Il prodotto DQ è una potenza p-esima, dunque
+D=uᵖ, Q=vᵖ, con gcd(u,v)=1 e c=uv. In particolare u≥3 è dispari e 11∤u.
+
+2. Un limite per u valido per ogni h, se p≥7 e p≠11
+
+Dimostriamo u<2ph. Siano ζ una radice primitiva undicesima dell'unità,
+K=ℚ(ζ), α=a+bζ. Gli ideali dei fattori a+bζʲ di cᵖ sono a due a due
+coprimi. Una prima comune non può dividere b poiché allora dividerebbe a.
+Dividerebbe quindi una differenza di radici distinte, e sarebbe la prima
+sopra 11. Riducendo il fattore modulo 1−ζ si avrebbe 11|D. Dunque (α) è
+una potenza p-esima di un ideale. L'anello ℤ[ζ] ha numero di classi 1
+(Masley). Si può scrivere α=εγᵖ con ε un'unità e γ intero algebrico.
+
+Possiamo prendere ε reale. Il rapporto ε/ε̄ è un intero algebrico con tutti
+i coniugati di modulo 1, quindi è una radice dell'unità. Le radici dell'unità
+in K sono μ₂₂. Modulo 1−ζ il rapporto è 1, quindi appartiene a μ₁₁.
+Dividendo ε per ρ∈μ₁₁ con ρ²=ε/ε̄ si ottiene un'unità reale. Poiché
+p≠11, ρ è una potenza p-esima in μ₁₁ e si assorbe in γ.
+
+Scegliamo 2ep≡−1 mod 11. Mettiamo X=ζᵉγ, Y=X−X̄, Z=Xᵖ−X̄ᵖ. Allora
+
+    Z=ε⁻¹ζᵉᵖ(a−b)(1−ζ),     Y|Z,     |N(Z)|=11 h¹⁰.
+
+Quindi Y≠0. Una immersione per ciascuna delle cinque coppie coniugate
+fornisce cinque numeri sᵢ=|Yᵢ/Xᵢ|≤2. Dalle norme intere e da N(α)=Q segue
+
+    1 ≤ ∏|Yᵢ| ≤ √11 h⁵,                 ∏|Xᵢ|=Q^(1/(2p)).
+
+La convessità di x¹¹ e la positività di a,b danno D¹⁰/2¹⁰≤Q≤D¹⁰.
+Perciò il più piccolo dei cinque sᵢ soddisfa
+
+    1/(16u⁵) ≤ sᵢ ≤ 11^(1/10) 2^(1/p) h/u < 2h/u.
+
+Il limite a sinistra usa il prodotto dei rapporti ≥1/u⁵ e gli altri
+quattro rapporti ≤2. Per il limite a destra si prende la quinta radice
+del maggiorante del prodotto. Questa scelta dell'immersione elimina
+dal calcolo tutte le dimensioni individuali dei coniugati dell'unità.
+
+Per questa immersione scriviamo z=X̄ᵢ/Xᵢ. Se u≥2ph, allora (p−1)|1−z|≤1.
+La somma geometrica ha modulo almeno p/2, poiché |zʲ−1|≤j|z−1| e
+la somma dei j da 0 a p−1 è p(p−1)/2. Segue
+
+    p/(32u⁵) ≤ |1−zᵖ| = h |1−ζⁱ|/|a+bζⁱ| ≤ 22h/uᵖ.
+
+Infatti |a+bζⁱ|²≥D²|1+ζⁱ|²/4 e il minimo di |1+ζⁱ| per 1≤i≤10
+è 2 sin(π/22)≥2/11 per concavità del seno. Si avrebbe u^(p−5)≤704h/p,
+incompatibile con u≥2ph, p≥7, h≥1, poiché (14h)²>704h/7.
+
+Il confronto tra coniugati sviluppa l'idea introdotta per il grado 5 nella
+nota #143028 e usata per il grado 7. Il prodotto dei rapporti relativi
+permette di applicarlo qui senza costruire un sistema di unità.
+
+3. Esponente p=5
+
+Siano T=D²=u¹⁰, s=h² e
+
+    F(T,s)=T⁵+55T⁴s+330T³s²+462T²s³+165Ts⁴+11s⁵.
+
+L'identità simmetrica 1024(a¹¹+b¹¹)=D F(D²,h²) dà F(T,s)=(4v)⁵.
+Per s≥1 e T≥1024s² valgono le disuguaglianze strette
+
+    (T+11s−1)⁵ < F(T,s) < (T+11s)⁵.
+
+Per quella di destra si confrontano i coefficienti. La differenza tra
+(T+11s)⁵ e F ha grado al più tre in T ed è al più 26·121 s²T³ per T≥11s,
+sommando i termini binomiali dal secondo ordine in poi. Il divario fra le
+due quinte potenze consecutive è almeno 5T⁴, maggiore del precedente
+limite. Entrambe le disuguaglianze e l'identità per F sono verificate in
+EleventhGap.lean. Dunque u¹⁰<1024h⁴. Per h≤1000 rimangono pochi valori
+di u e si controlla la somma originale. Per h=1 la sola disuguaglianza
+conclude già, essendo u≥3.
+
+4. Certificato per gli esponenti restanti
+
+Il corollario 2.4 di Pintér si applica a h dispari con gcd(a,h)=1.
+Nella sua notazione d=1, H₀=10 log 2 e
+M(p)=max(10,log(p/H₀+1/(10 log 3))+0.38). Esso dà
+
+    p < 126 H₀ M(p)² + log(55h²)/(2 log 3).
+
+Per h≤1000 ne segue p<200000. Infatti per p≥200000, usando 6<H₀<7,
+si ha M(p)≤log p e il termine additivo è <20. A 200000 già
+882(log p)²+20 < p perché log(200000)<13. Il rapporto fra il membro
+sinistro e p decresce per p≥200000. La fonte è un preprint del
+22 novembre 2026.
+
+Fissato p, poniamo α₀=1024^(−1/p). Dall'identità simmetrica, con h<D,
+la disuguaglianza (1+x)^(1/p)≤1+x/p per x≥0 dà
+
+    0 < v/u¹⁰ − α₀ < 1023 h² /(p u^(2p)).
+
+I cinque coefficienti dopo il termine principale sommano a 1023.
+La frazione v/u¹⁰ è ridotta. I limiti 3≤u<2ph e h≤1000 chiudono
+il calcolo seguente.
+
+verify_eleven.py calcola intervalli diadici per α₀ verificando le due
+potenze estreme con moltiplicazioni intere arrotondate verso l'esterno.
+Il valore Decimal serve unicamente a proporre gli estremi. In una scatola
+U≤u≤V i due estremi, allargati del termine di errore al valore U,
+contengono ogni frazione possibile. Se la larghezza è <1/V²⁰, vi è al più
+una frazione ridotta di denominatore ≤V¹⁰. Si trova la frazione di minimo
+denominatore nell'intervallo chiuso. Se vi è un intero, il più piccolo
+minimizza insieme numeratore e denominatore. Altrimenti i due estremi
+hanno la stessa parte intera k. Togliendo k e invertendo, si applica
+ricorsivamente lo stesso argomento e si ritorna da n/q a (kn+q)/n.
+Questo preserva la minimalità coordinata ed è l'algoritmo di Euclide.
+Nelle scatole più larghe si suddivide fino alla singola u, dove si provano
+i numeratori interi nell'intervallo. Ogni possibile frazione finale è
+controllata nell'equazione originale per gli scarti positivi ammessi.
+La somma delle due potenze cresce strettamente con lo scarto a D fissato.
+
+replay_cf.py usa residui modulari e radici intere per p=5,7. Per p≥13
+usa invece i convergenti di una frazione diadica z/S con S=2^672 e
+|z/S−α₀|<1024/S. Per costruire z, il programma racchiude log 2 usando
+la serie 2∑1/((2j+1)3^(2j+1)). Tronca la serie esponenziale alternata
+al termine 150 con argomento in valore assoluto <3/5. Ogni termine nella
+ricorrenza scalata ha errore <3 unità (il precedente errore viene
+moltiplicato al più per 3/5 prima dell'arrotondamento). La variazione
+dell'argomento incide per <2 unità perché 10/p<1, e il resto di Taylor
+per <1 dato 151!>S. Pertanto il margine 1024 copre l'errore totale.
+Per u≥101 vale 4·1023·1000² < 13·101⁶ e 4·1024·(2·200000·1000)²⁰<S.
+Segue |v/u¹⁰−z/S|<1/(2u²⁰). Il criterio di Legendre rende obbligatorio
+un convergente. Per u<101 i possibili numeratori vengono enumerati.
+
+Il primo programma controlla 17.980 primi p≥7, p≠11, in 46.160 scatole.
+Il secondo, per p≥13, esamina 2.750.398 convergenti e trova zero denominatori
+ammissibili u¹⁰ con u≥101. L'unico numeratore da controllare per u<101
+viene escluso nell'equazione originale. Per p=7 i filtri modulari riducono
+3.181.500 coppie iniziali a 71 coppie primitive, tutte escluse. Entrambi
+i programmi terminano con zero candidati. Si eseguono con Python 3 senza
+l'opzione -O. Lean 4.33.1 verifica i due lemmi reali citati nella sezione 3
+con propext, Classical.choice e Quot.sound. La dimostrazione complessiva
+è scritta e si avvale dei calcoli allegati.
+
+Riferimenti
+
+Billerey, Chen, Dieulefait, Freitas, On Darmon's program for the generalized
+Fermat equation, I, teorema 1.5. https://arxiv.org/pdf/2205.15861#page=6
+Darmon, Merel, Winding quotients and some variants of Fermat's Last Theorem.
+https://perso.imj-prg.fr/loic-merel/wp-content/uploads/merel-pub/winding.pdf
+Breuil, Conrad, Diamond, Taylor, On the modularity of elliptic curves over Q.
+https://doi.org/10.1090/S0894-0347-01-00370-8
+Masley, Solution of small class number problems for cyclotomic fields.
+https://www.numdam.org/item/CM_1976__33_2_179_0.pdf
+Á. Pintér, Explicit exponent bounds for sums of consecutive powers, cor. 2.4.
+https://arxiv.org/html/2611.29398v1
+Un preprint di M. Jaswal propone inoltre una soluzione del caso (11,11,5)
+senza limitare lo scarto. La sezione 3 dà un argomento elementare per
+gli scarti qui considerati. https://doi.org/10.5281/zenodo.23149241
