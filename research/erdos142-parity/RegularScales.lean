@@ -3,7 +3,7 @@ import BehrendModulus
 namespace ProgressionParity
 open Set.IsAPOfLengthFree
 
-private lemma length_mono {l k : ℕ} (hl : 1<l) (hk : l≤k) (N : ℕ) :
+lemma length_mono {l k : ℕ} (hl : 1<l) (hk : l≤k) (N : ℕ) :
     maxCard l N≤maxCard k N := by
   obtain ⟨A,ha,fa,ca⟩ := attained hl N
   rw [← ca]
@@ -12,7 +12,7 @@ private lemma length_mono {l k : ℕ} (hl : 1<l) (hk : l≤k) (N : ℕ) :
   apply fa a d hd
   exact (run_iff_forall _ _ _ _).mpr fun i hi => (run_iff_forall _ _ _ _).mp run i (by omega)
 
-private lemma multiple_upper {k : ℕ} (hk : 1<k) (b N : ℕ) :
+lemma multiple_upper {k : ℕ} (hk : 1<k) (b N : ℕ) :
     maxCard k (b*N)≤b*maxCard k N := by
   induction b with
   | zero => simp [(initial_values hk).1 0 (by omega)]

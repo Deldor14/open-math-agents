@@ -58,3 +58,19 @@ RegularScales.lean bounds the number of exceptional geometric scales. For every 
 In particular their fraction tends to zero as J tends to infinity. This is a density-one conclusion on exponents. Subadditivity gives the upper growth factor b at every step, while each slow jump multiplies the best possible final value by another factor of q. The Behrend bound at b^J limits how many such factors are possible. The estimate does not determine the pointwise asymptotic equivalent requested in Erdős #142.
 
 After building PrimePower, build LocalGrowth.lean, BehrendModulus.lean and RegularScales.lean, in that order, with the same Lean flags. The additional Mathlib dependency is Mathlib.Combinatorics.Additive.AP.Three.Behrend. The final declarations relative_increment, explicit_ratio and slow_scale_count passed the axiom audit with propext, Classical.choice and Quot.sound.
+
+## Shape of the whole profile on most geometric scales
+
+Profile.lean strengthens the estimate for one jump to a simultaneous estimate for every x in a geometric interval. Put N=b^(j+w) and B=b^w. For fixed b≥2, w≥1, k≥3 and 0<q<1, count an endpoint as bad if there exists an integer x in [0,N] for which
+
+    |r_k(x)/r_k(N) − x/N| > (1+1/B)/q − 1.
+
+Among the J consecutive window starts 0 ≤ j < J, the number of bad endpoints is at most
+
+    4 w sqrt((J+w) log b)/(-log q).
+
+The same bound holds for windows with r_k(b^(j+w)) ≤ q b^w r_k(b^j). To make the profile tolerance as small as desired, choose w large and then q sufficiently close to 1. For any such fixed tolerance the fraction of bad exponents tends to zero. The result controls all x simultaneously and does not determine the size of r_k(N) itself.
+
+For the proof set F(j)=log(b^j/r_k(b^j)). Interval splitting makes F nondecreasing; Behrend gives F(j)≤4 sqrt(j log b). Summing the window differences F(j+w)−F(j) cancels all interior terms, leaving at most w F(J+w). The deterministic block_profile lemma controls the error between the grid points. Build Profile.lean after RegularScales.lean; the axiom audits for slow_window_count, block_profile and uniform_profile_count are clean.
+
+Density.lean removes the auxiliary window choices from the conclusion. For every b≥2 and every ε>0 there is a C(b,ε) such that, for every k≥3 and J≥1, at most C(b,ε) sqrt(J) exponents j<J have even one x≤b^j with profile error greater than ε. The constant is independent of k. The theorem profile_density_one explicitly proves that this count divided by J tends to zero. Build Density.lean after Profile.lean; both audited final theorems use only the three standard axioms listed above.
