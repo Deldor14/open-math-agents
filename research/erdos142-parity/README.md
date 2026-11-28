@@ -107,6 +107,25 @@ For each k≥2 let p be its smallest prime divisor. For all 0≤N≤p(k−1),
 
 The very next value is r_k(p(k−1)+1)=p(k−1)+1−p. Thus p(k−1)+1 is exactly the first positive integer where the displayed floor formula overestimates the maximum. For k=3,4,5,6 the first failures are 7,7,21,11; when k is prime it is k(k−1)+1. This is an exact finite range for each forbidden length and does not extend to N approaching infinity at fixed k.
 
-For the upper bound, split the interval into length-k blocks and a remainder. For the matching lower construction omit multiples of k. A k-AP in an interval this short has step d<p, where gcd(d,k)=1, so it must visit residue zero. At the next length a set saturating the block bound would have to contain all of 1,1+p,...,1+(k−1)p. If one of these were missing, the intervals to its left and right would already require p−1 additional omitted points, contradicting saturation. Monotonicity gives the matching value at the breakpoint. FirstGap.lean gives an upstream Lean implementation; no literature priority is asserted.
+For the upper bound, split the interval into length-k blocks and a remainder. For the matching lower construction omit multiples of k. A k-AP in an interval this short has step d<p, where gcd(d,k)=1, so it must visit residue zero. At the next length a set saturating the block bound would have to contain all of 1,1+p,...,1+(k−1)p. If one of these were missing, the intervals to its left and right would already require p−1 additional omitted points, contradicting saturation. Monotonicity gives the matching value at the breakpoint. FirstGap.lean gives an upstream Lean implementation. In the mixed van der Waerden notation w₂(k;r), the breakpoint is the first interval requiring at least p holes. For k>p this threshold also follows from Landman, Robertson and Culver, “Some new exact van der Waerden numbers” (2005), with r=p. For prime k=p, see Corollary 2.6 of Maran, Reddy, Sharma and Tripathi, “Some results on a class of mixed van der Waerden numbers” (2018). The contribution here is the uniform direct proof in Lean for the actual r_k definition.
 
 Build FirstGap.lean after Distribution.lean, with Mathlib.Data.Nat.Factorization.Basic available. Both before_first_gap and first_gap_value are audited. The finite-148/mod5 directory separately gives the exhaustive occupancy-eight result and control for the ongoing r_6(148) computation.
+
+
+## Divisibility constraint near the prime square
+
+At N≥p(p−1) for a prime p, let A⊆[1,N] avoid p-term progressions, and fix x∈A. Consider holes y outside A with y not congruent to x modulo p. The product of |y−x| over these holes is divisible by lcm(1,…,p−1). In particular, if there are m such holes, then
+
+    lcm(1,…,p−1) ≤ (N−1)^m.
+
+For each stride 1≤d<p, there is a p-AP of that stride containing x in [1,N]. Some term y must be a hole. Because p is prime, no other term is congruent to x modulo p. Thus d divides a nonzero distance in this product. DivisorCover.lean certifies lcm_divides_hole_distances and residue_spread. This necessary condition alone does not settle Conjecture 4.2 of the 2018 paper.
+
+References: https://web.iitd.ac.in/~atripath/publications/mixed_van_der_Waerden.pdf.
+
+SpreadBound.lean takes the logarithm of the preceding bound and uses the elementary Chebyshev estimate for the least common multiple. For N>2 the number of holes outside the residue of each x in A is at least ((p−1) log 2 − log p) / log(N−1). Build DivisorCover.lean after FirstGap.lean, and SpreadBound.lean after DivisorCover.lean. The three audited declarations use propext, Classical.choice and Quot.sound.
+
+## Seven exact prime cases and remaining finite searches
+
+The prime-cases directory supplies independent DRAT certificates, the exact CNF generator, witnesses and replay instructions for Conjecture 4.2 of Maran et al. at p in {11,13,17,19,23,29,31}. Each result gives r_p(p(p−1)+3)=(p−1)². At p=31 this is r_31(933)=900. The methods establish these seven instances and leave the conjecture for arbitrary primes open.
+
+The experiments directory records the following bounded searches. The standalone script rechecks each positive witness from its integers. Restricting strides to 1,…,p−1 permits explicit small hitting sets with no single residue class exceeding four points for p=7, or nine for p=11. These statements depend on omitting stride p. The other short-stride observations are solver outputs, recorded separately from the DRAT-certified cases. At length 148, 37 distinct reflection-symmetric 94-point sets containing both endpoints each admit no one-point extension. The search did not exhaust the symmetric cores and cannot decide the global value. Finite-148's rigorous parity and mod-5 exclusions continue to allow both 95 and 96. The follow-up parity search at occupancy 50 was interrupted before exhaustion; the occupancy-eight search returned undecided profiles. No exclusion is inferred from those unfinished branches.
