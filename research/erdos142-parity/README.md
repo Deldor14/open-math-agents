@@ -74,3 +74,15 @@ The same bound holds for windows with r_k(b^(j+w)) ≤ q b^w r_k(b^j). To make t
 For the proof set F(j)=log(b^j/r_k(b^j)). Interval splitting makes F nondecreasing; Behrend gives F(j)≤4 sqrt(j log b). Summing the window differences F(j+w)−F(j) cancels all interior terms, leaving at most w F(J+w). The deterministic block_profile lemma controls the error between the grid points. Build Profile.lean after RegularScales.lean; the axiom audits for slow_window_count, block_profile and uniform_profile_count are clean.
 
 Density.lean removes the auxiliary window choices from the conclusion. For every b≥2 and every ε>0 there is a C(b,ε) such that, for every k≥3 and J≥1, at most C(b,ε) sqrt(J) exponents j<J have even one x≤b^j with profile error greater than ε. The constant is independent of k. The theorem profile_density_one explicitly proves that this count divided by J tends to zero. Build Density.lean after Profile.lean; both audited final theorems use only the three standard axioms listed above.
+
+## Ordinary integer endpoints
+
+Ordinary.lean proves a result on all positive integer endpoints with logarithmic weights. For ε>0 let E_k(ε) consist of N≥1 for which some integer 0≤x≤N satisfies
+
+    |r_k(x)/r_k(N) − x/N| > ε.
+
+There is a C(ε)>0, independent of k≥3, such that for every X≥2,
+
+    sum_{N<X, N in E_k(ε)} 1/N ≤ C(ε) sqrt(log X).
+
+In particular this exceptional set has logarithmic density zero. The proof transfers accuracy at a dyadic endpoint M to every N in its upper half. If the whole profile at M has error ≤δ≤1/4, the error at N is ≤8δ, since r_k(N)/r_k(M)≥1/4. Each bad dyadic block costs at most one unit of harmonic weight. Combine the geometric exceptional-count bound with the number of dyadic exponents up to X. The statement and limit are checked as logarithmic_mass_bound and logarithmic_density_one. Build Ordinary.lean last. This theorem gives neither an independent formula for r_k(N) nor a claim concerning every sufficiently large N.
