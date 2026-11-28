@@ -1,0 +1,9 @@
+Small exponent, root cap, residue survivors: 7 238000 1
+Small exponent, root cap, residue survivors: 11 22000 0
+Larger primes, direct pairs, convergents, twelfth-power denominators: 25991 10000 4898134 0
+Small exponent, direct residue survivors: 7 1
+Small exponent, direct residue survivors: 11 0
+Larger primes, rational intervals, directly checked roots: 25991 179787 8
+'BealThirteenth.symmetric_identity' depends on axioms: [propext, Quot.sound]
+'BealThirteenth.chord_lower' depends on axioms: [propext, Classical.choice, Quot.sound]
+'BealThirteenth.arc_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
