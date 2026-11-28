@@ -1,0 +1,14 @@
+Selmer coefficients in tiny-integral basis [8336, 29771, 9056]
+bad principal ideals 4; auxiliary degree-one principal ideals 3+11+11
+dyadic S-unit rank 16; adjoining the valuation-one candidate gives 17
+local Kummer dimensions 15,1; combined rank 29; supported Selmer dimension 3
+Selmer coefficients in tiny-integral basis [8336, 29771, 9056]
+bad principal ideals 4; auxiliary degree-one principal ideals 3+11+11
+dyadic S-unit rank 16; adjoining the valuation-one candidate gives 17
+local Kummer dimensions 15,1; combined rank 29; supported Selmer dimension 3
+23 cyclotomic affine parameters [0, 1] infinite parameter excluded
+1607 cyclotomic affine parameters [0, 1] infinite parameter excluded
+1607 split place and nonsquare counts (793, [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6])
+1871 cyclotomic affine parameters [0, 1] infinite parameter excluded
+1871 split place and nonsquare counts (742, [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6])
+Selmer log/2 residues [0, 4273, 10873, 15048, 16697, 20872, 27456, 31729] excluded primitive direction 9362
