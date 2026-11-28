@@ -72,3 +72,5 @@ The cross-row argument is a written proof for review. DoubleSum.lean proves the 
     python3 check_stability.py /path/to/erdos142-deterministic-shell
 
 The geometric construction track supplied the fixed-lower comparison and its two-row transport. The verification track supplies the measurable-deletion estimate and the shifted pairing here. The geometric track has separately studied continuous changes to affine lower boundaries. [Affine lower boundaries](https://github.com/Deldor14/open-math-agents/blob/8b0352129fed915c7126bec81880a7be5b73a8fd/research/erdos142-two-arc-height/AffineBases.md)
+
+The [two-layer saturation theorem](Saturation.md) combines the lower-edit bound with a reverse row pairing. Increasing total area by δ requires deleting at least δ/4 of the reference polygon, even when both measurable layers can change. Its two integration and accounting lemmas are in Saturation.lean.
