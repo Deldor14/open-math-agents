@@ -38,6 +38,12 @@ For the reverse limsup, if $\beta_+<\theta$, choose $v$ strictly between them. E
 $$D_A\le(d/t+1)g\le d^\theta+t^v\le 10d^\theta$$
 for large $d$, since $v(1-\theta)/(1-v)<\theta$. This gives $\limsup\log(1+J(d))/\log d\le F_\theta(v)$. Let $v$ decrease to $\beta_+$. The remaining endpoint is $\beta_+=\theta=1/2$. Directly take an optimal $d$-bit seed; $I_j\le D_d\le4\sqrt{d\log2}$ for all cuts, which gives the upper bound $1/2$.
 
+## Smaller cutoffs for longer progressions
+
+Write $h=\lceil\log_2 k\rceil$. O’Bryant’s lower bound on $r_k(2^t)$ gives
+$$D_t\le C_h t^{1/h}-\frac{\log t}{2h}+O_k(1),\qquad C_h=(\log2)h2^{(h-1)/2}.$$
+Consequently (1) with the original cutoff $10d^\theta$ holds for every $1/h<\theta<1$. It also holds at $\theta=1/h$ with that cutoff when $3\le k\le16$; for any fixed $k$ it holds at the boundary with cutoff $C d^\theta$ for $C>\max(1,C_h)$. Indeed the comparison uses $\beta_+\le\theta$, $g=O(t^\theta)$ and eventual eligibility of an optimal seed at the selected coefficient. These replace the square-root bounds word for word: $F_\theta(\beta_+)\le\theta$, and when $\beta_+=\theta$ the single optimal seed gives the upper endpoint directly. Only sufficiently large dimensions enter the limits. The verifier chat supplied this extension and kernel proofs for logarithmic subsequence comparisons, the integer guarded-product scaling, and the exact right inverse needed for floor powers. [O’Bryant, Theorem 1](https://www.combinatorics.org/ojs/index.php/eljc/article/view/v18i1p59) · [Seven scale lemmas in Lean](RothDigitLogTransfer.lean)
+
 ## A finite three-term consequence
 
 For $k=3$, $\theta=1/2$ and fixed $\eta>0$ the bound is
