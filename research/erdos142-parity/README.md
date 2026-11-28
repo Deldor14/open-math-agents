@@ -22,3 +22,19 @@ To reproduce, build the pinned upstream AP.Basic module first. From the director
     lean -DwarningAsError=true -o ParitySplit.olean ParitySplit.lean
     lean -DwarningAsError=true -o UpstreamParity.olean UpstreamParity.lean
     lean -DwarningAsError=true -o Doubling.olean Doubling.lean
+
+## Prime-power dilation
+
+For every prime p, integer h ≥ 0, progression length k ≥ p^(h+1), and N ≥ 0, the maximum satisfies
+
+    r_k(pN) ≥ p r_k(N) − floor(r_k(N)/p^h).
+
+For example, the guarantees at (p,k) = (2,8), (3,9), (5,5) are 7/4, 8/3, and 4 times r_k(N), respectively, with upward integer rounding. At k = p^(h+1) and N = p^h the formula gives equality. These examples establish sharpness of the uniform factor across the stated range, without asserting the optimal factor for each larger fixed k.
+
+Expand each point of an extremal set into a full block of p consecutive integers. Delete the least occupied residue class modulo p^(h+1). Every progression whose step is not divisible by p visits the deleted class among its first p^(h+1) terms. A progression whose step is divisible by p projects back to a forbidden progression in the original set. The candidate uses at least the number of points in the displayed formula.
+
+Additional file PrimePower.lean proves prime_power_dilation, initial_values and prime_power_sharp on the same upstream definition. With the preceding three files built and Mathlib.Combinatorics.Pigeonhole available, run
+
+    lean -DwarningAsError=true -o PrimePower.olean PrimePower.lean
+
+The dilation and sharpness theorems both report only propext, Classical.choice and Quot.sound.

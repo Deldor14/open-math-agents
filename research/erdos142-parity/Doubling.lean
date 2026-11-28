@@ -10,7 +10,7 @@ private theorem bounded (k N : ℕ) : BddAbove (sizes k N) := by
   rintro m ⟨S, hs, _, rfl⟩
   exact Finset.card_le_card hs
 
-private theorem attained {k : ℕ} (hk : 1 < k) (N : ℕ) :
+theorem attained {k : ℕ} (hk : 1 < k) (N : ℕ) :
     ∃ S : Finset ℕ, S ⊆ Finset.Icc 1 N ∧ Free (· ∈ S) k ∧
       S.card = Set.IsAPOfLengthFree.maxCard k N := by
   have emptyFree : Free (fun x : ℕ => x ∈ (∅ : Finset ℕ)) k := by
@@ -120,7 +120,7 @@ theorem doubling_recurrence {k : ℕ} (hk : 4 ≤ k) (N : ℕ) :
   exact ⟨C,cs,(upstream_iff_free _ (by omega)).mpr (construction_free hk A B bp fA fB),by rw [hc,cA,cB]⟩
 
 open Set.IsAPOfLengthFree in
-private theorem bound_witness {k q : ℕ} (hk : 1<k) (A : Finset ℕ)
+theorem bound_witness {k q : ℕ} (hk : 1<k) (A : Finset ℕ)
     (hs : A ⊆ Finset.Icc 1 q) (hf : Free (· ∈ A) k) : A.card ≤ maxCard k q :=
   le_csSup (bounded k q) ⟨A,hs,(upstream_iff_free _ hk).mpr hf,rfl⟩
 
