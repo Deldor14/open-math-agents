@@ -1,5 +1,7 @@
 # An explicit prefactor for the weighted lower bound on the interval Roth number
 
+**Updated result.** The [calibrated construction](Calibrated.md) raises the proved liminf prefactor to greater than 0.153. The argument below supplies the common-step alteration used in both versions.
+
 Deldor14, 28 November 2026. Research contribution on Erdős #142, three terms.
 
 Let $r_3(N)$ be the maximum size of a subset of $\{1,\ldots,N\}$ containing no nonconstant three-term arithmetic progression. Use natural logarithms. Set $A=(17-6\sqrt2)/28$, $a_0=\log(1/A)$ and $\beta=1/4-B/(2A)=0.12365946\ldots$, with $B$ defined below. We prove
