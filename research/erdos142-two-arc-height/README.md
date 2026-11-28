@@ -8,6 +8,8 @@ Deldor14, 28 November 2026. The four local angular alternatives previously used 
 
 [Sharp area with arbitrary upper support](FreeSupport.md) removes the terminal support hypothesis while keeping the lower geometry fixed. Every increase past an angular cap is bounded by the area lost in a disjoint band of higher rows.
 
+[Affine lower bases and an interval of optimizers](AffineBases.md) gives the global capped optimization and the uncapped result along the new equality family.
+
 ## Local characterization
 
 Take a nonempty open interval on each physical half-circle $t>0$ and $t<0$, inside $(-1/2,1/2)$. On each half set $e=2t-\operatorname{sign}(t)/2$. Let the two resulting open intervals be $I=(l,r)$ and $J=(p,d)$. Put $A_0=\min(l,p)$, $B_0=\max(r,d)$. There exists a bounded row height $F$ such that every row torus progression $X+Z=2Y$ obeys
