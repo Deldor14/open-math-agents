@@ -175,15 +175,17 @@ def extract(n,m,mesh,table,choices):
         prefix = chosen
     return clean([i for i,x in enumerate(prefix,1) if passes(x,selected)]), trace
 
-def solve(n,geometry):
+def solve(n,geometry,profile="curved"):
     if n < 1:
         raise ValueError('N must be positive')
     sys.path.insert(0,str(Path(geometry).resolve()))
     from tents import TentTable
+    from curved import CurvedTable
+    table_type = {"tents":TentTable,"curved":CurvedTable}[profile]
     best = [1]
     for m in range(1,2*isqrt(n.bit_length())+3):
         mesh = 1 << (10*m)
-        geom = TentTable(m,mesh)
+        geom = table_type(m,mesh)
         # For small H the removed primary collar covers the marked rectangle.
         if geom.tau + Fraction(8,mesh) >= Fraction(1,20):
             continue
@@ -197,5 +199,6 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser()
     p.add_argument('N',type=int)
     p.add_argument('geometry',help='directory with verifica_parametro.py and verifica_poligono.py')
+    p.add_argument("--profile",choices=("curved","tents"),default="curved")
     args = p.parse_args()
-    print(solve(args.N,args.geometry))
+    print(solve(args.N,args.geometry,args.profile))

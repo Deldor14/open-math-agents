@@ -24,11 +24,12 @@ def power(value, exponent):
 
 
 class TentTable:
-    def __init__(self, m, mesh):
+    def __init__(self, m, mesh, trim=Q(5,8)):
         from verifica_parametro import J, V, R, G, F, q, half
         self.m, self.mesh = m, mesh
         area_inactive = J/2 - q*J*J/4
-        c = (5*q*J/16)/area_inactive
+        self.trim = trim
+        c = trim*q*J/(2*area_inactive)
         self.H = max(4, isqrt(floor_surd(c*m))**2)
         self.K = self.H**2
         self.tau = Q(1, self.H*isqrt(self.H))
@@ -39,7 +40,7 @@ class TentTable:
                                + [half+(a+b)/2 for a,b in self.plateaus]))
         self.breaks = sorted(set([0,R,half,half+G,half+F,half+R]+self.cusps))
 
-    def at(self, i, j):
+    def geometry(self, i, j):
         from verifica_parametro import J, V, R, G, q, rr, half, Cell, Surd
         m, mesh, H, K = self.m, self.mesh, self.H, self.K
         s = Q(i, mesh)
@@ -72,8 +73,48 @@ class TentTable:
             return None
         if 0 < u < J:
             top = 2*rr(u) + q*(G-u)
-            if e >= top - 5*q/(8*H) - Q(64,mesh):
+            if e >= top - self.trim*q/H - Q(64,mesh):
                 return None
+        return s,t,u,e,weight,sheet
+
+    def tick_score(self, ratio_squared):
+        if ratio_squared <= 1:
+            return 0
+        # Write 2^(2j) <= ratio_squared^(m^2) and bisect in the integer j.
+        exponent = self.m*self.m
+        bits = 48+2*exponent.bit_length()
+        lower = floor_surd((1 << bits)*ratio_squared)
+        def dyadic_tick(numerator):
+            return ((numerator**exponent).bit_length()-1-bits*exponent)//2
+        lo_tick, hi_tick = dyadic_tick(lower), dyadic_tick(lower+1)
+        if lo_tick==hi_tick or ratio_squared*(1 << bits)==lower:
+            return lo_tick
+        v = power(ratio_squared,exponent)
+        high = self.m*self.m*max(1,(1+floor_surd(ratio_squared)).bit_length())
+        low = 0
+        while high-low > 1:
+            mid = (high+low)//2
+            if v >= 1 << (2*mid):
+                low = mid
+            else:
+                high = mid
+        return low
+
+    def hinge(self,s):
+        from verifica_parametro import Surd
+        zero=Surd(0)
+        return (8/self.tau)*sum((max(zero,s-z) for z in self.cusps),zero)
+
+    def mark(self,s,t):
+        return Q(54,100)<s<Q(55,100) and Q(12,100)<t<Q(13,100)
+
+    def at(self,i,j):
+        from verifica_parametro import V, J, half, Surd
+        data = self.geometry(i,j)
+        if data is None:
+            return None
+        s,t,u,e,weight,_ = data
+        zero,K = Surd(0),self.K
         den = Q(3,2)-e
         lam = Q(15,8)
         linear = Q(59,60)-lam/3
@@ -83,19 +124,6 @@ class TentTable:
         else:
             comp = 2*sum(((b-a)*max(zero, u-(a+b)/2) for a,b in self.plateaus), zero)
         height = K*(2*s*s-linear*s+lam*(comp+weight*weight/den))
-        height += (e+half)**2 + (8/self.tau)*sum((max(zero,s-z) for z in self.cusps),zero)
-        ratio_squared = K*lam*weight*weight / den**3
-        score = 0
-        if ratio_squared > 1:
-            v = power(ratio_squared,m*m)
-            # The exact floor of (m^2/2) log_2(ratio_squared).
-            low, high = 0, m*m*(H.bit_length()+2)
-            while high-low > 1:
-                mid = (high+low)//2
-                if v >= 1 << (2*mid):
-                    low = mid
-                else:
-                    high = mid
-            score = low
-        marked = Q(54,100)<s<Q(55,100) and Q(12,100)<t<Q(13,100)
-        return floor_surd(mesh*height), score, marked
+        height += (e+half)**2+self.hinge(s)
+        score = self.tick_score(K*lam*weight*weight / den**3)
+        return floor_surd(self.mesh*height),score,self.mark(s,t)

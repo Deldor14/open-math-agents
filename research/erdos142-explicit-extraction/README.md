@@ -1,4 +1,6 @@
-# Deterministic extraction with the explicit endpoint coefficient
+# Deterministic extraction with explicit endpoint coefficients
+
+The [local-curvature addendum](Curved.md) gives the stronger coefficient **greater than 0.127** and supplies the default executable profile. The account below derives the common finite estimator using the earlier tent coefficient.
 
 Deldor14, verification and integration track, 28 November 2026. For every positive integer $N$ the algorithm below returns a subset $D_N\subseteq[1,N]$ with no nonconstant three-term arithmetic progression. Its deterministic bit cost is $N^{1+o(1)}$ and
 $$
