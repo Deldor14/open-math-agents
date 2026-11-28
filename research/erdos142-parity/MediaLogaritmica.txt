@@ -1,0 +1,100 @@
+Il numero di insiemi privi di progressioni e la funzione estremale
+Nota di ricerca su Erdős 142 e sulla domanda di Cameron–Erdős
+
+Fissiamo k ≥ 5. Scriviamo r(n) per la massima cardinalità di un sottoinsieme
+di {1,…,n} privo di progressioni aritmetiche non banali di lunghezza k e I(n)
+per il numero di questi sottoinsiemi, compreso quello vuoto. Poniamo
+
+    α = 1 / ⌈log₂ k⌉,       E(n) = log₂ I(n) / r(n) − 1  (n ≥ 1).
+
+Da un insieme di cardinalità r(n) otteniamo 2^r(n) sottoinsiemi ammissibili,
+quindi E(n) ≥ 0. Deduciamo la seguente stima dalle proposizioni sui contenitori
+di Morris, Ortega e Rué e dal limite inferiore di Rankin:
+
+    ∑_{1 ≤ n ≤ X} E(n)/n  =  O_k(1 + (log X)^(2α)).                 (1)
+
+In particolare la media, normalizzata dividendo per la somma dei pesi 1/n,
+tende a zero. Per k = 5, ad esempio, l'errore relativo medio è
+O((log X)^(−1/3)). Per ogni k fissato esiste inoltre un insieme di interi G
+di densità logaritmica uno lungo il quale log₂ I(n)/r(n) tende a 1.
+
+Dimostrazione
+
+1. Perdite di densità su intervalli di scale.
+Poniamo d(n)=r(n)/n e F(j)=−log d(2^j), usando logaritmi naturali.
+La partizione in due intervalli uguali dà r(2u) ≤ 2r(u), quindi F cresce
+in senso debole. Il limite inferiore di Rankin dà F(j) ≤ C_k(1+j)^α.
+Per interi b,m,v ≥ 0, un'identità telescopica e la monotonia danno
+
+    ∑_{i<m} [F(b+i+v)−F(b+i)] ≤ v [F(b+m+v)−F(b)].               (2)
+
+Infatti la somma è ∑_{i<v} [F(b+m+i)−F(b+i)]. Questa prova vale anche
+quando le due finestre si sovrappongono.
+
+2. Dal rapporto diadico a un intero qualsiasi.
+Raggruppiamo gli esponenti j in fasce J ≤ j < 2J, con J potenza di due.
+Sia h=⌈A J^α⌉, per una costante A dipendente solo da k, fissata nel punto 3.
+Per J abbastanza grande si ha 2h ≤ J. Poniamo
+
+    s_j = F(j+2h) − F(j−2h),       a = 2^(−h).
+
+Per ogni 2^j ≤ n < 2^(j+1) prendiamo ℓ=⌊n/2^h⌋, L=2^(j−2h),
+M=2^(j+2h). Allora L/ℓ ≤ a e n/M ≤ a. Suddividendo [u] in intervalli
+di lunghezza al più v si ottiene d(u) ≤ (1+v/u)d(v). Applicando questa
+disuguaglianza alle coppie (ℓ,L) e (M,n) si ha
+
+    d(n)/d(ℓ) ≥ exp(−s_j)/(1+a)^2 ≥ 1−s_j−2a.                     (3)
+
+L'ultima disuguaglianza segue da log(1+a) ≤ a ed exp(−x) ≥ 1−x.
+La (2) con b=J−2h, m=J, v=4h mostra che ∑_{J≤j<2J} s_j ≪_k J^(2α).
+
+3. Stima puntuale dell'eccesso di conteggio.
+Il Teorema 1.4 di Morris, Ortega e Rué dà E(n) ≤ C'_k per ogni n.
+Mostriamo che, simultaneamente su tutta la fascia,
+
+    E(n) ≪_k s_j + a + J^(−2).                                    (4)
+
+Prendiamo δ=8(s_j+2a+J^(−2)). Se δ supera una piccola costante assoluta,
+la (4) segue dal Teorema 1.4. Altrimenti la (3) implica l'ipotesi (9) della
+loro Proposizione 4.1. Scegliamo q=2^(−h/(4k)). L'ipotesi (10) vale
+uniformemente: (ℓ/n)^(1/(2k)) ≤ 2^(−h/(2k)), log n = O(J),
+δ^(−2) = O(J^4) e J^5·2^(−h/(4k)) tende a zero. Inoltre n/ℓ tende
+all'infinito e ℓδ tende all'infinito. Queste sono le separazioni di scala
+necessarie nella proposizione.
+
+Applicando il loro Teorema 3.6 come nella dimostrazione del Teorema 2.6,
+ogni insieme ammissibile è contenuto in un contenitore di cardinalità al
+più (1+δ)r(n); il logaritmo in base 2 del numero dei contenitori è
+O_k(q n log n). Per Rankin esiste D_k > 0 tale che n/r(n) ≤ exp(D_k J^α)
+in tutta la fascia, per J grande. Fissando A con A log 2/(4k)>D_k+1 si
+ottiene q n log n / r(n) ≪_k J^(−2). Il conteggio di tutti i sottoinsiemi
+dei contenitori dà E(n) ≤ δ+O_k(J^(−2)), provando la (4).
+
+4. Somma sulle fasce.
+Il peso ∑ 1/n su [2^j,2^(j+1)) è al più 1. Per la (4), il contributo
+della fascia J ≤ j < 2J è O_k(J^(2α) + Ja + 1/J) = O_k(J^(2α)).
+Sommando sulle potenze di due fino a log₂ X si ottiene (1). Per una
+scelta esplicita di G includiamo, a partire da n≥3, gli interi con
+E(n) ≤ 1/log log(n+3). La massa armonica fino a X del complemento è
+O_k((1+(log X)^(2α)) log log(X+3)). Poiché 2α < 1, tale massa è o(log X).
+
+Estensione e verifica
+
+Il risultato dipende dai teoremi pubblicati nel preprint di Morris, Ortega e
+Rué. La Proposizione 4.1 è puntuale nei parametri n, ℓ e δ. È questo che
+permette di usarla anche sulle fasce costruite qui. La loro scelta di una
+successione infinita interviene nel trovare le scale, prima dell'applicazione
+dei contenitori. La stima (1) lascia aperta la possibilità di eccezioni sparse.
+Per k=3,4 la stima di Rankin dà α=1/2 e questo calcolo perde il decadimento
+della media. La formula esplicita per r_k(n) richiesta dal problema 142
+resta aperta anche per k≥5.
+
+Il modulo MORWindows.lean verifica con Lean le disuguaglianze finite (2) e (3)
+per la funzione estremale upstream, oltre al conteggio delle finestre che
+superano una soglia. L'applicazione di Rankin, dei contenitori e la somma
+asintotica sono presentate nella dimostrazione scritta.
+
+Fonte: Patrick Morris, Miquel Ortega e Juanjo Rué, Counting subsets of integers
+free of arithmetic configurations, arXiv:2607.17746v1, equazione (2),
+Teoremi 1.4 e 3.6, Proposizione 4.1 e dimostrazione del Teorema 2.6.
+https://arxiv.org/html/2607.17746v1
