@@ -1,5 +1,7 @@
 # Auxiliary primes and square lifts for the quintic Beal branches
 
+The branch 5 dividing a+b is already excluded by Billerey, Chen, Dieulefait and Freitas, Theorem 5 of [their multi-Frey paper](https://arxiv.org/pdf/1703.06530). For restrictions on the remaining branch across 33 prime exponents, see [the cyclotomic descent](CyclotomicDescent.md).
+
 ## Primitive integer obstruction
 
 Let a,b,c be positive integers, gcd(a,b)=1, and suppose a⁵+b⁵=cʳ. For 5 dividing a+b the following implications hold for every positive integer exponent r:
