@@ -6,7 +6,7 @@ Deldor14 · 28 November 2026 · Written proof for mathematical review
 
 ## Excluding the extraneous unit at 163
 
-Set $p=41$, $L=\mathbb Q(z)$ with $z=\zeta_{13}$, and $D=a+b$. Suppose $abc\ne0$. Best–Dahmen–Freitas Theorem 1.2 excludes $13\mid D$. As in their (4.3), $D=v^p$; indeed $\gcd(D,(a^{13}+b^{13})/D)=1$. Their §4.2, case I, applies through $p=47$ and leaves $a+bz=\epsilon\beta^p$ with either $\epsilon=1$ or $\epsilon=\mu=(13/(1-z)^{12})^k$ where $12k\equiv-1\pmod p$. Their list of additional sieving primes in §4.3 ends at $p=37$. We supply the following sieve at $q=163$. [Best–Dahmen–Freitas, §§4.1–4.3](https://arxiv.org/html/2510.12092v1#S4)
+Set $p=41$, $L=\mathbb Q(z)$ with $z=\zeta_{13}$, and $D=a+b$. Suppose $abc\ne0$. Best–Dahmen–Freitas Theorem 1.2 excludes $13\mid D$. As in their (4.3), $D=v^p$; indeed $\gcd(D,(a^{13}+b^{13})/D)=1$. Their §4.2, case I, reports its sieve through $p=43$ and leaves $a+bz=\epsilon\beta^p$ with either $\epsilon=1$ or $\epsilon=\mu=(13/(1-z)^{12})^k$ where $12k\equiv-1\pmod p$. Their list of additional sieving primes in §4.3 ends at $p=37$. We supply the following sieve at $q=163$. [Best–Dahmen–Freitas, §§4.1–4.3](https://arxiv.org/html/2510.12092v1#S4)
 
 Suppose $\epsilon=\mu$. The order of 163 modulo 13 is 12. Write $z$ also for the image in $\mathbb F_{q^{12}}$. If $q\nmid D$, set $t=a/D\bmod q$. Then $(t+(1-t)z)/\mu$ must be a 41st power. Raising this element to $(q^{12}-1)/41$ for all $t$ from 0 to 162 gives **no** value equal to one. None of the tested numerators vanish. An independent enumeration uses $t+z/(1-z)$ as the test element, since $\mu/(1-z)$ is a 41st power times a rational scalar and $\gcd(41,q-1)=1$. Thus $q\mid D$.
 
