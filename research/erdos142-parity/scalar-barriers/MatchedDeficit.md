@@ -2,7 +2,7 @@
 
 Let R(n) be the interval Roth number and set d(n)=log₂(n/R(n)) for n≥1. For every fixed integer p≥1 there is a sequence H of nonnegative integers with H=R on [0,p], H≥R everywhere, such that
 
-    0 ≤ d(n) − log₂(n/H(n)) = Oₚ(d(n)^(4/5) log(e+d(n))^(6/5)).                    (1)
+    0 ≤ d(n) − log₂(n/H(n)) = Oₚ(d(n)^(4/5) log(e+d(n))^(1/5)).                    (1)
 
 In particular log(n/H(n))/log(n/R(n)) tends to one, at all sufficiently large integers. Nevertheless
 
@@ -20,11 +20,13 @@ Thus e is subadditive. It tends to infinity by Roth's theorem. For real y≥1 le
 
     T(y+z) ≥ T(y)+T(z),           y−1 < e(T(y)) ≤ y.                          (3)
 
-Indeed the sum of the two maximizing indices is admissible at y+z; the successor of T(y) is inadmissible and costs at most one. The Behrend estimate in mathlib and Raghavan's Theorem 1.1 give absolute constants with
+Indeed the sum of the two maximizing indices is admissible at y+z; the successor of T(y) is inadmissible and costs at most one. The Behrend estimate in mathlib and Theorem 1.4 of Raghavan's v3 preprint give absolute constants with
 
-    e(t) ≪ 1+√t,                 T(y) ≪ (1+y)⁶ (log(e+y))⁶.                  (4)
+    e(t) ≪ 1+√t,                 T(y) ≪ (1+y)⁶ log(e+y).                  (4)
 
-For the second inequality evaluate the lower bound e(t)≳t^(1/6)/log(e+t) at t=⌈C(1+y)⁶(log(e+y))⁶⌉. For sufficiently large absolute C it exceeds y, uniformly for y≥1. For arbitrary n, the difference between d(n) and d(2^⌊log₂ n⌋) is at most one by monotonicity and R(2u)≤2R(u). [Raghavan](https://arxiv.org/abs/2603.27045v3) · [Behrend in mathlib](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Combinatorics/Additive/AP/Three/Behrend.html)
+For the second inequality evaluate the lower bound e(t)≳(t/log(e+t))^(1/6) at t=⌈C(1+y)⁶log(e+y)⌉. For sufficiently large absolute C it exceeds y, uniformly for y≥1. For arbitrary n, the difference between d(n) and d(2^⌊log₂ n⌋) is at most one by monotonicity and R(2u)≤2R(u). [Raghavan, Theorem 1.4](https://arxiv.org/html/2603.27045v3#S1) · [Behrend in mathlib](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Combinatorics/Additive/AP/Three/Behrend.html)
+
+The earlier version used the weaker denominator log(e+t) in the lower bound for e. Using the precise exponent 1/6 on that denominator improves the power of the logarithm in (1) from 6/5 to 1/5. If the stronger estimate T(y)≪(1+y)⁶ asserted in the [upper-bound manuscript by zeemy23](https://github.com/zeemy23/open-math-agents/blob/57a4b39e3fcfaf131dbe2d00aeae480da0889014/research/erdos142/upper-bound/UpperBound.md) is confirmed, the same argument omits the logarithmic factor altogether. The unconditional comparison here uses Raghavan’s stated theorem.
 
 ## Placing the transitions
 
@@ -38,17 +40,17 @@ Let S(0)=0 and let S(i) be the maximum of Σ b(hⱼ) over all compositions of i 
 
 We now show, for every i≥2, that
 
-    ci+c+C₀−1 < e(S(i)) ≤ ci + O(i^(4/5) log(e+i)^(6/5)).                   (5)
+    ci+c+C₀−1 < e(S(i)) ≤ ci + O(i^(4/5) log(e+i)^(1/5)).                   (5)
 
 The lower bound follows from S(i)≥T(c(i+1)+C₀) and (3). For the upper bound take a maximizing composition and group its parts by L≤h<2L, for L=1,2,4,… . Within a nonempty group write s for the sum of its parts and w for the sum of their costs. By (3), subadditivity and the definition of b, we have e(b(h))≤ch+C₂ with fixed C₂=c+C₀+e(C₁). The group has at most s/L parts, hence
 
     e(w) ≤ cs+C₂s/L.
 
-Independently, (4) gives b(h)≪L⁶log(e+L)⁶, so w≪sL⁵log(e+L)⁶ and e(w)≪1+√(sL⁵log(e+L)⁶). Thus e(w)≤cs whenever s is at least a sufficiently large constant times L⁵log(e+L)⁶. For lower s the previous linear estimate bounds the excess by O(L⁴log(e+L)⁶). In all cases the positive excess is
+Independently, (4) gives b(h)≪L⁶log(e+L), so w≪sL⁵log(e+L) and e(w)≪1+√(sL⁵log(e+L)). Thus e(w)≤cs whenever s is at least a sufficiently large constant times L⁵log(e+L). For lower s the previous linear estimate bounds the excess by O(L⁴log(e+L)). In all cases the positive excess is
 
-    (e(w)−cs)₊ ≪ min(i/L, L⁴ log(e+L)⁶).
+    (e(w)−cs)₊ ≪ min(i/L, L⁴ log(e+L)).
 
-Sum over dyadic L and use subadditivity of e across nonempty groups. For L≤i^(1/5)/log(e+i)^(6/5) sum the second bound as a geometric series, bounding its logarithm by log(e+i); for larger L sum the first. Their sum is O(i^(4/5)log(e+i)^(6/5)), proving (5) (with finitely many small i absorbed in the constant).
+Sum over dyadic L and use subadditivity of e across nonempty groups. For L≤i^(1/5)/log(e+i)^(1/5) sum the second bound as a geometric series, bounding its logarithm by log(e+i); for larger L sum the first. Their sum is O(i^(4/5)log(e+i)^(1/5)), proving (5) (with finitely many small i absorbed in the constant).
 
 ## Checking the integer model
 
@@ -60,7 +62,7 @@ If n≤S₀ but (2m−1)n reaches a scale Nᵢ, then ⌊log₂ m⌋≥S(i)−⌈
 
 ## Comparing the deficits point by point
 
-For Nᵢ≤n<Nᵢ₊₁ let t=⌊log₂ n⌋. Sandwich e(t) between e(S(i)) and e(S(i+1)). By (5) and the one-bit comparison, d(n)=ci+O(i^(4/5) log(e+i)^(6/5)). At the same n the model has log₂(n/H(n))=ci+Oₚ(1), by its bounds on the density and rounding. In particular i is comparable to d(n), and subtraction proves (1).
+For Nᵢ≤n<Nᵢ₊₁ let t=⌊log₂ n⌋. Sandwich e(t) between e(S(i)) and e(S(i+1)). By (5) and the one-bit comparison, d(n)=ci+O(i^(4/5) log(e+i)^(1/5)). At the same n the model has log₂(n/H(n))=ci+Oₚ(1), by its bounds on the density and rounding. In particular i is comparable to d(n), and subtraction proves (1).
 
 ## How often a fixed dilation can have small growth
 

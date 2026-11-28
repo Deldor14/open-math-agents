@@ -2,7 +2,7 @@
 
 Let R(n) denote the interval Roth number and let d(n)=log₂(n/R(n)). For every finite prefix length p there is an integer sequence H with H=R through p, H≥R everywhere, and
 
-    0 ≤ log₂(H(n)/R(n)) ≪ₚ d(n)^(4/5) log(e+d(n))^(6/5).
+    0 ≤ log₂(H(n)/R(n)) ≪ₚ d(n)^(4/5) log(e+d(n))^(1/5).
 
 It has all the properties of [the nonlinear model](SelfConsistentDigits.md), including subadditivity, unit increments, the one-site join, H(m)H(n)≤H((2m−1)n), the stated simultaneous affine rules and liminf H(⌊987n/610⌋)/H(n)=1. Yet **no regularly varying function of index one stays within a bounded factor of H on both sides**. In [the dyadic window criterion](RegularMajorants.md) this model has C=∞. The same error estimate and the same arithmetic requirements also admit a model with C=987/128.
 
@@ -26,13 +26,13 @@ The equality follows at stage k from (1), and later changes have larger weight t
 
 ## Preserving the quantitative comparison with R
 
-Write E(i)=(1+i)^(4/5) log(e+i)^(6/5). With any finite list of cost changes the previous estimates give
+Write E(i)=(1+i)^(4/5) log(e+i)^(1/5). With any finite list of cost changes the previous estimates give
 
     e(S_old(i)) ≤ ci + A E(i) + B_old.                                         (3)
 
 Importantly the coefficient A can be fixed independently of that finite list. In the proof by dyadic groups of parts L≤h<2L, every group missing all the changed weights obeys the original bounds with the original constants. There are finitely many other groups. For each of those, its total cost at total weight s is ≤C_L s for a finite constant depending on the group. Since e(t)=O(1+√t), its positive excess over cs is bounded uniformly in s. The sum of these finite bounds is absorbed by B_old.
 
-For the current choice h=k choose M sufficiently large that B_old≤E(M) and e(K)≤(c+1)M, using (3) at M+h with h fixed. In particular K≤T((c+1)M)≪M⁶ log(e+M)⁶. Additional lower requirements on M below are compatible with these two.
+For the current choice h=k choose M sufficiently large that B_old≤E(M) and e(K)≤(c+1)M, using (3) at M+h with h fixed. In particular K≤T((c+1)M)≪M⁶ log(e+M). Additional lower requirements on M below are compatible with these two.
 
 Consider an integer i for which M is the largest newly weighted index ≤i. Let q be the multiplicity of M in a maximizing composition. Its other parts use only the old costs. Two estimates are available.
 
@@ -41,13 +41,13 @@ Consider an integer i for which M is the largest newly weighted index ≤i. Let 
 
 We show that at least one estimate always applies. The choice divides according to the inverse deficit of the given input R.
 
-If liminf as y→∞ of T(y)/(y⁶ log(e+y)⁶) is zero, choose M on an unbounded subsequence for which
+If liminf as y→∞ of T(y)/(y⁶ log(e+y)) is zero, choose M on an unbounded subsequence for which
 
-    K ≤ T((c+1)M) ≤ M⁶ log(e+M)⁶ / h⁵.
+    K ≤ T((c+1)M) ≤ M⁶ log(e+M) / h⁵.
 
-Such integers exist by rounding y/(c+1) down and using monotonicity. Since e(t)≪1+√t, the first estimate applies whenever q≥C₁'(1+K/M²), with a fixed large C₁'. Otherwise q≪1+M⁴ log(e+M)⁶/h⁵. Choose M large enough that the latter term is at least one. Then h q^(1/5)≪M^(4/5) log(e+M)^(6/5). As i≥qM, this implies qh≪E(i). The constants are independent of k.
+Such integers exist by rounding y/(c+1) down and using monotonicity. Since e(t)≪1+√t, the first estimate applies whenever q≥C₁'(1+K/M²), with a fixed large C₁'. Otherwise q≪1+M⁴ log(e+M)/h⁵. Choose M large enough that the latter term is at least one. Then h q^(1/5)≪M^(4/5) log(e+M)^(1/5). As i≥qM, this implies qh≪E(i). The constants are independent of k.
 
-In the other case T(y) is bounded below by a positive multiple of y⁶ log(e+y)⁶ for all sufficiently large y. Inverting this inequality gives e(t)≪1+t^(1/6)/log(e+t). For example, take y to be a sufficiently large constant times t^(1/6)/log(e+t), for which T(y)≥t. Hence e(qK)≪q^(1/6)M for all q≥1 and all chosen M sufficiently large: apply the increasing upper envelope at C qM⁶log(e+M)⁶, whose logarithm is at least a constant times log(e+M). The first estimate applies for all q above a fixed constant. For the remaining q choose M with h≤E(M), giving the second estimate. This establishes (3) with O(E(i)) uniformly for the infinite list.
+In the other case T(y) is bounded below by a positive multiple of y⁶ log(e+y) for all sufficiently large y. Inverting this inequality gives e(t)≪1+(t/log(e+t))^(1/6). For example, take y to be a sufficiently large constant times (t/log(e+t))^(1/6), for which T(y)≥t. Hence e(qK)≪q^(1/6)M for all q≥1 and all chosen M sufficiently large: apply the increasing upper envelope at C qM⁶log(e+M), whose logarithm is at least a constant times log(e+M). The first estimate applies for all q above a fixed constant. For the remaining q choose M with h≤E(M), giving the second estimate. This establishes (3) with O(E(i)) uniformly for the infinite list.
 
 The lower calibration e(S(i))≥ci−constant follows from the unchanged lower costs. The pointwise comparison with R now follows by the same sandwich of d(n) between consecutive levels when Nᵢ≤n<Nᵢ₊₁. The densities of the model in this range are within constant factors of ρⁱ.
 

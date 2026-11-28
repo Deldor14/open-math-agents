@@ -60,6 +60,8 @@ For x≤x* monotonicity gives d(tᵢ+⌊log₂x⌋)−Dᵢ₋₁−hᵢ(x)≤K�
 
     limsup H(n)/R(n) ≤ C maxᵢ 2^cᵢ ≤ C/ρ.
 
+The same choice bounds the supremum over all n≥1 by C/ρ. Before the first support, ⌊log₂n⌋<t₁≤T₁ gives d(⌊log₂n⌋)<K₀+c₁. The initial ceiling then gives H(n)/R(n)≤1+2^(K₀+c₁+1)/P₀. The first support already has a preceding failed test since t₁>0, and every ceiling adds at most 1/R(n) to the ratio. Thus equation (1) and its limiting exponent also apply when the defining limsup is replaced by a supremum over all positive n.
+
 Here and in the interstage bound, the incoming and outgoing deficits of the unrounded model include the fixed additive log₂P₀, absorbed by the constant. Since ρ⁻¹=v_s/2ˢ is comparable to m^(1−α), this proves the upper estimate in (1). Behrend's lower bound makes log(m/R(m))=O(√log m), and taking logarithms of both bounds proves the stated limiting exponent.
 
 If the actual dyadic-window constant C_R of [RegularMajorants.md](RegularMajorants.md) is finite, the lower bound improves to c m^(1−α)/C_R. For each fixed s at a plateau with the right endpoint normalized to one, the inner length is 1/v_s and its normalized H-value is 2⁻ˢ. Apply the density comparison (2) of that manuscript to this fixed ratio along the sequence of near-plateaus. It bounds the limsup of the smaller length's R-density divided by the larger one's by C_R. The same limiting comparison then gives K_H≥v_s/(2ˢ C_R). This last conclusion is conditional on C_R<∞. The exponent in (1) is unconditional. The analytic estimates are written proofs.
