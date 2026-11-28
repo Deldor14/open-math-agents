@@ -1,0 +1,10 @@
+number of ideals: 296336
+distinct norms: 88351
+lower bounds with denominator 1000000000000
+prime contribution: 1189955252169
+archimedean contribution: -1174553533666
+normalized margin: 15401718503
+finite disks [(2, 1), (2, 4)] plus infinity
+h [15, 20, 20, 6, 1] g [15, 5, 20, 21, 0, 17, 21, 14] residual cubic [15, 5, 15, 1]
+log(9P)/5 mod 5 [4, 0, 3] annihilator mod 5: (3+x^2)dx/(2y)
+Cantor tangent [4, 0, 3]
