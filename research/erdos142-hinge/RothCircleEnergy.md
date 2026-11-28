@@ -10,6 +10,8 @@ $$
  E_k(N)\asymp_k U(N)^{k-1},\qquad
  \frac{16}{27}U(N)^2\le E_3(N)\le18 U(N)^2.                       \tag{1}
 $$
+The later [sharp finite rounding theorem](RothCubicRank.md) improves the lower coefficient in (1) to one, for every $N$ and in every uniformity. Its cubic interval minimum is verified in Lean.
+
 In particular $\log(N/R_3(N))=\tfrac12\log E_3(N)+O(1)$. The uncertainty in the displayed logarithm from these explicit inequalities has width $\tfrac12\log(18\cdot27/16)$. A leading coefficient or exponent for the divergent logarithmic deficit transfers in both directions. The multiplicative error in (1) still matters for a ratio-one equivalent for $R_3(N)$.
 
 For $B\ge1$, take the same infimum over periodic $W^{1,k}$ functions with $\|f'\|_k\le B\|f\|_k$ and call it $E_k(N,B)$. With $b=\min(N,\lfloor B\rfloor)$, the complete two-scale estimate is
