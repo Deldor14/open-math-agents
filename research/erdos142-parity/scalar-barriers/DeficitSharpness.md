@@ -41,3 +41,11 @@ $$
 Finally $h\asymp w$, so $i\asymp w^5L^6$ and $\log(2+i)\asymp L$. Therefore $m=w^4L^6\asymp i^{4/5}(\log(2+i))^{6/5}$, as claimed.
 
 If only a pure-power example is desired, taking $L_k=1$ throughout gives $T(y)\le y^6$ and the lower bound $\gg i^{4/5}$.
+
+## Two-sided power estimates
+
+For every fixed 0<α<1 there is also an abstract deficit e(t) comparable to t^α at all t≥1 for which every such schedule has e(uᵢ)−ci bounded below by a positive multiple of log i at infinitely many i. Here take any C₀>0. This matches the conditional logarithmic upper bound for the composition schedule.
+
+Set vₖ=⌊2^(k/α)⌋ and F(n)=Σ εₖvₖ, where εₖ are the binary digits of n. We have v₀=1 and vₖ₊₁≥2vₖ. Binary carries therefore cannot lower the total value, so F is superadditive. It is strictly increasing since the new high bit when adding one outweighs the erased lower bits. For 2ᴷ≤n<2ᴷ⁺¹ one has v_K ≤ F(n) < 2v_K. Thus F(n) is comparable to n^(1/α). Define e as the maximum of 1 and the least integer y with F(y)≥t. It is nondecreasing and subadditive with increments zero or one, e(t) is comparable to t^α for t≥1, and T(y)=F(⌊y⌋) for y≥1.
+
+Fix 0<δ≤C₀. For all sufficiently large k let hₖ=⌊(2ᵏ−δ)/c⌋, so c hₖ+δ≤2ᵏ≤c(hₖ+1)+C₀. Starting at index one, use each separation hₖ once for k₀≤k≤K. At i=1+Σhₖ we have uᵢ≥ΣF(2ᵏ)=F(Σ2ᵏ), since the bits are distinct. Hence e(uᵢ)−ci≥δ(K−k₀+1)−c, and i is comparable to 2ᴷ. The kernel checks the carry, strict growth of the weighted binary value, the no-carry equality for distinct bits and the lower bound in terms of their number. [Lean certificate](DeficitPowerSharpness.lean)
