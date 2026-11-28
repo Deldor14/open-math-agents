@@ -1,0 +1,125 @@
+Ricostruire insiemi estremali su più blocchi
+Erdős 142 · Nota di ricerca, 28 novembre 2026
+
+Due metà ottime possono essere incompatibili. La verifica della chat parallela
+trova il primo caso per le 3-progressioni su 24 punti: partendo da due ottimi
+su 12 si arriva a 9 punti mediante cancellazioni, mentre il massimo è 10.
+Su 26 punti il massimo è 11; vincolando anche una sola metà a un ottimo
+locale si arriva a 10. Segue una regola per un numero arbitrario di blocchi.
+
+Regola esatta e costo di uno scarto
+
+Spezziamo [1,qm] in q blocchi di lunghezza m. Sia A un insieme privo di
+k-progressioni, R=r_k(m), a_i il numero di punti di A nel blocco i. Scriviamo
+
+    D = qR−|A| = ∑ᵢ(R−a_i).
+
+Se B≤|A|, la parte di A in ogni blocco è contenuta in un insieme locale
+massimale per inclusione di cardinalità almeno R−(qR−B). Infatti R−a_i≤D
+e, aggiungendo punti finché possibile, si ottiene il massimale. Per applicare
+la regola contemporaneamente a tutti gli ottimi globali basta una minorazione
+certificata B≤r_k(qm). Dopo aver unito i candidati locali occorre verificare
+le progressioni che attraversano i confini.
+
+Una seconda opzione è tenere nel blocco solo configurazioni con almeno
+R−t punti oppure l'insieme vuoto. Per ottenere un insieme ammissibile da A
+si possono svuotare tutti i blocchi con R−a_i>t. La perdita P soddisfa
+
+    (t+1)P ≤ max(0,R−t−1) D.                                      (1)
+
+Ogni blocco svuotato contribuisce almeno t+1 al deficit e contiene al più
+R−t−1 punti. La disuguaglianza vale anche per t≥R. I risultati finiti per
+la funzione estremale ufficiale sono verificati in BlockRecovery.lean.
+
+Quante volte la regola recupera ogni ottimo
+
+Poniamo R_j=r_k(2^j) e F(j)=log(2^j/R_j). F è nondecrescente. Per k≥3
+la costruzione di Behrend dà F(j)=O(√j). Più in generale la costruzione di
+Rankin dà F(j)=O_k((1+j)^α) con α=1/⌈log₂k⌉. Per ogni J potenza di due,
+si considerino tutti i j con J≤j<2J. Fissiamo c,b>0 con α+c+b<1 e poniamo
+H=⌊c log₂ J⌋. Per ogni j grande dividiamo [1,2^j] ricorsivamente in metà,
+fino a H livelli. Si hanno al più J^c blocchi terminali.
+
+Salvo O_k(J^(α+c+b) log J) indici j nella fascia, per ogni ottimo globale
+e ogni suo blocco, a ogni livello h≤H, la parte dell'ottimo ha almeno
+(1−J^(−b))R_(j−h) punti. Basta quindi conservare le configurazioni locali
+massimali entro questo margine e permettere cancellazioni. La constatazione
+vale simultaneamente per tutti gli ottimi. In un calcolo dal basso si possono
+formare le unioni compatibili delle parti conservate e tenere la chiusura per
+sottoinsiemi dei candidati sopra soglia: ogni restrizione necessaria supera
+essa stessa la soglia a tutti i livelli. Il controllo delle progressioni che
+attraversano due figli resta necessario.
+
+Dimostrazione. Poniamo s=F(j)−F(j−H). La somma di s sulla fascia è
+O_k(HJ^α), grazie all'identità telescopica (2) in MediaLogaritmica.txt.
+I j con s>J^(−b−c) sono dunque O_k(HJ^(α+b+c)). Per ogni altro j, ogni
+h≤H e q=2^h, vale
+
+    (qR_(j−h)−R_j)/R_(j−h) = q(1−exp(−F(j)+F(j−h)))
+                               ≤ 2^H s ≤ J^(−b).
+
+Nessun deficit individuale può superare il deficit totale del livello.
+
+Approssimazione a profondità maggiore
+
+Siano u,b,v>0 con α+u+b+v<1. Fermiamo la divisione dopo H=⌊J^u⌋ livelli,
+quindi in q=2^H blocchi. Per tutti i j della fascia tranne O_k(J^(α+u+b+v)),
+ogni ottimo ammette un sottoinsieme di cardinalità (1−O(J^(−v)))R_j in
+cui ogni blocco terminale è vuoto oppure contiene almeno (1−J^(−b))R_(j−H)
+punti. Anche questa è una proprietà di tutti gli ottimi.
+
+Infatti, salvo le eccezioni indicate, s=F(j)−F(j−H)≤J^(−b−v).
+Con R=R_(j−H), |A|=R_j e D=qR−|A| si ha D/|A|=exp(s)−1≤2s per J grande.
+La (1) con t=⌊J^(−b)R⌋ dà P/|A|≤(R/(t+1))(exp(s)−1)≤2J^(−v).
+L'approssimazione riguarda i blocchi terminali alla profondità indicata.
+
+I limiti di Behrend e Rankin e il passaggio alle stime asintotiche sono
+usati nella prova scritta. Le identità sui deficit, la costruzione dei
+massimali e il costo dello scarto sono verificati dal kernel Lean. Il
+calcolo dei massimali locali e della compatibilità può restare costoso.
+Il problema 142 chiede ancora una formula esplicita valida per tutti gli N.
+
+Fonti. Il punto di partenza su due metà viene dalla nota di Deldor14
+«Quali insiemi conservare quando si uniscono due metà» del 28 novembre 2026.
+Il conteggio delle finestre è verificato in MORWindows.lean. Per la stima
+di Rankin si veda l'equazione (2) del lavoro di Morris, Ortega e Rué.
+https://arxiv.org/html/2607.17746v1
+
+Una perdita assoluta inevitabile anche per tre termini
+
+Per N=2^j, il deficit totale di una divisione in due metà è
+Δ(N)=2r₃(N)−r₃(2N). Per ogni β<1 e ogni C>0, vale
+
+    Δ(N) > C N^β
+
+per N diadici arbitrariamente grandi. Su questi intervalli ogni ottimo
+globale ha almeno una metà con più di C N^β/2 punti in meno rispetto alla
+massima cardinalità locale. Il risultato riguarda la cardinalità della
+restrizione. Stabilire di quanti punti la si possa poi estendere è una
+domanda ulteriore.
+
+Poniamo u_j=r₃(2^j) e ρ=2^β. Se da un certo indice si avesse sempre
+2u_j−u_(j+1)≤Cρ^j, basterebbe porre D=C/(2−ρ) e v_j=u_j−Dρ^j.
+Si avrebbe v_(j+1)≥2v_j. Per Behrend, u_j≥s^j da un certo indice in
+poi per ogni s<2 positivo, quindi v_j>0 per qualche j grande (scegliere
+ρ<s<2). Ne seguirebbe che u_j/2^j resta limitato inferiormente da una
+costante strettamente positiva, in contraddizione con il teorema di Roth.
+DoublingLoss.lean verifica il risultato per r₃ usando il teorema di Roth
+di Mathlib; per k≥3 verifica il criterio assumendo r_k(2^j)/2^j→0.
+Nella prova ordinaria questa ipotesi segue dal teorema di Szemerédi.
+
+Recuperare r dalla perdita di giunzione
+
+Scriviamo ora Δ_k(N)=2r_k(N)−r_k(2N) per ogni N. La suddivisione in due
+metà dà Δ_k(N)≥0. Sommando una serie telescopica si ottiene
+
+    r_k(N)=∑_{t≥0} Δ_k(2^t N)/2^(t+1).
+
+Il resto al livello T è r_k(2^T N)/2^T e tende a zero per densità nulla.
+In particolare, se si trova una funzione indipendente g tale che, per ogni
+ε>0 abbastanza piccolo e da un certo N in poi, valga
+(1−ε)Δ_k(N)≤g(N)≤(1+ε)Δ_k(N), la serie costruita sostituendo g a Δ_k
+è un equivalente di r_k(N). Per confronto fra serie a termini non negativi,
+si conservano gli stessi due fattori relativi. La stima richiesta su g resta
+aperta. LossSeries.lean verifica l'identità incondizionata per k=3 e il
+confronto generale sotto l'ipotesi di annullamento del resto.
