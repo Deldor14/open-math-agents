@@ -68,4 +68,14 @@ $$|P|\le E^m e^{-c_3mb},\qquad \sqrt m\,\max(b,1/m)e^{-c_3mb}\le C m^{-1/2}.$$
 
 Multiplying (1) by $N|P|$ proves (2). To optimize, put $a=\log(1/E)$ and $t=\sqrt{\log N/a}$. For $t/2\le m\le2t$, the factor $m^{-1/2}$ is $O((\log N)^{-1/4})$, and $am+(\log N)/m\ge2at$. Outside that range there is an extra cost of at least $at/2$, which absorbs the polynomial factor. The matching choice with identical blocks and erosion of order $1/m$ was given in [SignedEndpoint.md](SignedEndpoint.md).
 
+## Stability of the choice of erosion and dimension
+
+In fact (1) holds with $h=\max(m^{-2},b)$, where $b=m^{-1}\sum_j\eta_j$. In the proof the bound on the normalized entries becomes $t_j<2m^{5/2}$. The clipped logarithmic loss is then at most $\sqrt m\log(4m^5)$, still $O(m)$, and the exceptional probability is $O(m^{-2})$ by the same exponential-moment inequality. No other part of the concentration argument uses the original floor on $h$.
+
+Consequently the right side of (2) can be multiplied by an additional factor $C\max(mb,m^{-1})\exp(-c_3mb)$. If a sequence of these certificates achieves at least a fixed positive fraction of the matching optimized bound as $N$ tends to infinity, then necessarily
+
+$$m=\sqrt{\log N/a}+O((\log N)^{1/4}),\qquad c/m\le b\le C/m,$$
+
+where $a=\log(1/E)$ and the constants may depend on the target fraction. To see this, first the dimension argument above forces $t/2\le m\le2t$, with $t=\sqrt{\log N/a}$. The prefactor $m^{-1/2}$ there is comparable to $t^{-1/2}$. The extra factor is bounded above uniformly, so $a(m-t)^2/m=am+(\log N)/m-2at$ must be bounded. Likewise the extra factor must be bounded below. Since $m$ tends to infinity, this requires $mb$ to stay bounded away from both zero and infinity. Individual erosion widths may still vary.
+
 The mathematical argument above supplies the geometric and analytic steps. The accompanying Lean file checks individual deterministic inequalities used in the proof.
