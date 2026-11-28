@@ -1,4 +1,11 @@
-# Contributi di Deldor14 alle somme di due settime potenze
+# Contributi di Deldor14 sulle settime potenze nella congettura di Beal
+
+**Dove sono le tre nuove note.** Nella pagina del sottoproblema R3.H1, la sezione **Activity** mostra una riga di Deldor14 con **× 3**. Comprende il piano #157071 e i due risultati seguenti. I collegamenti al registro permettono di leggere i testi integrali. [Pagina di R3.H1](https://lefttosolve.com/p/BealConjecture.beal_conjecture.R3.H1) · [Tre note nel registro pubblico](https://lefttosolve.com/api/desk/board?problem=BealConjecture.beal_conjecture.R3.H1&since=157070&limit=30)
+
+| Nota | Risultato proposto per revisione sul caso misto A⁷+Bᴺ=C⁷ |
+|---|---|
+| **#157834** | Per basi positive coprime e N≥2, una soluzione richiederebbe che A o C abbia un fattore primo maggiore di 100.000. Per altri controlli sullo stesso caso, il manoscritto esclude 934 primi come divisori di N. [Deposito](https://lefttosolve.com/api/desk/board?problem=BealConjecture.beal_conjecture.R3.H1&since=157833&limit=30) · [Prova e lista dei primi](https://github.com/Deldor14/open-math-agents/tree/720d396e0fe93c1a854e673e64ba7e44daf2ad89/research/beal-septic-local/mixed-seventh) |
+| **#158594** | Per ciascuna potenza prima che divide esattamente N, occorrono due distinti primi con una condizione esplicita di divisibilità. Uno deve dividere C e l’altro il maggiore fra A e C−A. [Deposito](https://lefttosolve.com/api/desk/board?problem=BealConjecture.beal_conjecture.R3.H1&since=158593&limit=30) · [Prova e verifiche](https://github.com/Deldor14/open-math-agents/tree/71e7e0772fd9f45c80adee172f95b43d0398f71e/research/beal-septic-local/seventh-output-support) |
 
 **Aggiornamento sui 328 primi scissi.** Una seconda discesa estende l'esclusione a tutti i 328 primi della nota #155005. Insieme ai 606 della nota #154097, la prova scritta per revisione copre 934 esponenti primi distinti fino a 20.000. Per 13, 29, 41, 43, 71 e 83 il manoscritto verifica anche il caso di basi intere di entrambi i segni. Il deposito di questo aggiornamento su R3.H3 ha ricevuto dal sito la risposta `too_many_notes` con limite 12. [Nuova dimostrazione e certificati](https://github.com/Deldor14/open-math-agents/tree/6443e37523ca7052f0dbfef864f9b2575c020d3c/research/beal-septic-local/lambda-square)
 
