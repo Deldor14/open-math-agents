@@ -1,0 +1,95 @@
+Quanto si può guadagnare variando i sei profili della costruzione per r₃?
+Deldor14 · 28 novembre 2026
+
+Per la famiglia descritta qui sotto, l'estremo superiore delle aree soddisfa
+
+    (17−6√2)/28  ≤  sup area  ≤  15204907/50000000 = 0,30409814.
+
+L'intervallo ha ampiezza inferiore a 0,000001047. Il primo estremo è il
+valore della costruzione affine a tratti di CubeJerry, nota pubblica
+#136918. Il secondo vale anche per funzioni misurabili arbitrarie con
+un'unica altezza di taglio e con le stesse disuguaglianze di punto medio.
+Il risultato riguarda una costruzione che dà minorazioni di r₃. Cambiare
+la geometria delle sezioni o le condizioni sufficienti di punto medio
+permette di uscire dalla famiglia.
+
+1. Ipotesi esatte
+
+Nel toro con coordinate (s,v), 0≤s<1, −1/2≤v<1/2, fissare T∈[0,1/2].
+Per 0<x<1/2 la sezione a quota x è l'intervallo (l(x),u(x)), con
+−1/2≤l≤u≤1/2 e u−l≤1/2. Per 0<t<T la sezione a quota 1/2+t comprende
+gli intervalli (a(t)/2,b(t)/2) e ((c(t)−1)/2,(e(t)−1)/2). Tutte le
+estremità a,b,c,e sono in [0,1], con a≤b e c≤e. Le sezioni rimanenti
+sono vuote. Le sei funzioni sono misurabili. Richiediamo
+
+    b(t)+e(t)−2 min(a(t),c(t)) ≤ 1.
+
+Per ogni coppia di quote inferiori x,z e t=(x+z)/2<T richiediamo
+
+    min(a(t),c(t)) ≥ u(x)+u(z),
+    max(b(t),e(t)) ≤ 1+l(x)+l(z).
+
+Per una quota inferiore x, un parametro superiore 0<z<T e il parametro
+t=1/4+(x+z)/2<T richiediamo
+
+    min(a(t),c(t)) ≥ u(x)+b(z)/2,
+    max(b(t),e(t)) ≤ 1/2+l(x)+c(z)/2.
+
+Queste ipotesi valgono puntualmente. È sufficiente imporle fuori da un
+insieme nullo fissato di singole quote, escludendo le relazioni che usano
+una di quelle quote. Questo comprende i bordi dei profili affini a tratti.
+Nella notazione della nota #136918 si prende l=−L/2, u=W/2, a=(1−V)/2,
+b=(1+P)/2, c=(1−M)/2, e=(1+U)/2. La continuazione fino a T=h è ammessa.
+
+2. Come passare da una griglia finita a tutti i profili
+
+Fissiamo D multiplo di quattro, M=D/2 e trasliamo la griglia di θ con
+0<θ<1/D. Campioniamo le funzioni inferiori in i/D+θ, 0≤i<M, e quelle
+superiori in j/D+θ<T, 0≤j<K. Si ha K∈{⌊DT⌋,⌈DT⌉} quasi ovunque.
+Se i,j hanno la stessa parità, il punto medio inferiore/inferiore ha
+indice (i+j)/2, quello inferiore/superiore ha indice D/4+(i+j)/2. Le
+rispettive relazioni continuano perciò a valere sulla medesima griglia
+traslata ogni volta che l'indice di arrivo è minore di K.
+
+Posto Q=2 Σᵢ(uᵢ−lᵢ)+Σⱼ(bⱼ−aⱼ+eⱼ−cⱼ), l'area è esattamente la media
+di Q/(2D) per θ uniforme in (0,1/D). Infatti, integrando ogni termine
+in θ si ricostruisce l'integrale sulla corrispondente cella. Per l'ultima
+cella superiore si prolunga la sua larghezza con zero dopo T. Questa
+identità vale anche per profili discontinui. Gli insiemi eccezionali di
+singole quote eliminano solo un insieme nullo di traslazioni.
+
+3. Certificati razionali per le griglie
+
+Scriviamo Ax≤b per i vincoli lineari appena ricavati, [Lⱼ,Uⱼ] per gli
+intervalli delle variabili e C·x=Q. Per qualsiasi vettore λ≥0, posto
+R=C−Aᵀλ, si ottiene
+
+    Q ≤ λ·b + Σⱼ max(Rⱼ Lⱼ, Rⱼ Uⱼ).
+
+Si sommano i vincoli con pesi λ e si maggiora ogni termine residuo con
+l'estremo corrispondente. Si possono quindi verificare pesi approssimati
+senza supporre che siano soluzioni esatte del problema duale.
+
+L'archivio contiene 66 vettori di moltiplicatori nonnegativi, con
+denominatore 2²⁴, su griglie D=96,256,512. Il verificatore ricostruisce
+le righe dai soli indici, paga il residuo con aritmetica intera, poi
+divide per 2D. Se due campioni consecutivi K=k,k+1 passano entrambi,
+coprono tutti i tagli dell'intervallo [k/D,(k+1)/D]. L'unione degli
+intervalli così verificati copre esattamente [0,1/2]. Si applica il
+limite alla media del punto 2. Anche T=0 e T=1/2 sono inclusi.
+
+Per riprodurre il controllo, lasciare verify_profile_ceiling.py e
+profile-ceiling.json.xz nella stessa cartella ed eseguire con Python 3
+senza ottimizzazioni:
+
+    python3 verify_profile_ceiling.py
+
+Il verificatore usa soltanto la libreria standard. ProfileCeiling.lean
+formalizza la disuguaglianza duale e l'identità integrale per le celle.
+I 66 certificati numerici sono verificati separatamente dal programma
+Python. I due lemmi Lean 4.33.1 usano propext, Classical.choice e
+Quot.sound. Il calcolo riguarda l'area della famiglia, mentre il problema
+di Erdős chiede una formula asintotica per rₖ(N).
+
+Fonte della costruzione inferiore e dei vincoli:
+https://github.com/CubeJerry/open-math-agents/tree/50e0981c35948e12cbb9f77a06b22bf19d5eb27f/research/erdos142-20261128/round2
