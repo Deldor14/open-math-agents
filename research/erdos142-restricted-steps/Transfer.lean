@@ -51,7 +51,7 @@ theorem block_holes (k : ℕ) (hk : 2 ≤ k) (hole : ℕ → Prop) [DecidablePre
       · have after : ¬i+1<j := by omega
         by_cases mid : i=j
         · subst j
-          simp [w] <;> omega
+          simp [w]; omega
         · have hi : ¬i<j := by omega
           have he : (i-1)*k+k=i*k := by
             have hn : i-1+1=i := by omega
