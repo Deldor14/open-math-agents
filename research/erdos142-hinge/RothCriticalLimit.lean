@@ -58,6 +58,20 @@ theorem anchor_intensity (x : ℝ) :
   have b := min_le_right x (1-x)
   linarith
 
+/-- Retaining the individual direction components gives the positive child
+operator in the weighted contraction norm. -/
+theorem weighted_integrand {α : Type*} (I : Finset α) (g h : α → ℝ) :
+    Real.exp (-(∑ i ∈ I, g i^2)) * (∑ i ∈ I, g i*h i)^2 ≤
+      Real.exp (-1) * ∑ i ∈ I, h i^2 := by
+  have cs := sum_mul_sq_le_sq_mul_sq I g h
+  calc
+    _ ≤ Real.exp (-(∑ i ∈ I, g i^2)) * ((∑ i ∈ I, g i^2) * ∑ i ∈ I, h i^2) :=
+      mul_le_mul_of_nonneg_left cs (Real.exp_nonneg _)
+    _ = ((∑ i ∈ I, g i^2) * Real.exp (-(∑ i ∈ I, g i^2))) * ∑ i ∈ I, h i^2 := by ring
+    _ ≤ _ := mul_le_mul_of_nonneg_right (Real.mul_exp_neg_le_exp_neg_one _)
+      (sum_nonneg (fun _ _ => sq_nonneg _))
+
+#print axioms weighted_integrand
 #print axioms least_omission
 #print axioms root_gain
 #print axioms contraction_integrand

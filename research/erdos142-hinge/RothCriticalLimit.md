@@ -27,7 +27,7 @@ For this range the limiting value of $\alpha_k(S_p)/(np)$ in probability and in 
 $$
  F_k(\lambda)=\int_0^1\int_0^1 q_{\lambda t^{k-1}}(x)\,dx\,dt .     \tag{4}
 $$
-Here $q_0=1$. For $k=3$, $h(x)=1/2+\min(x,1-x)$ and $H=1$, so (2) holds throughout $0<\lambda<e/2$, including $\lambda=1$. The [all-length comparison](RothEffectiveLength.md) gives order estimates for every $\lambda$; this note identifies an actual limit in (2). The local optimization argument follows the general idea of analyzing increments on tree neighborhoods. For related results for sparse random graphs see [Gamarnik, Nowicki and Świrszcz](https://arxiv.org/abs/math/0309441). The edges here come from arithmetic relations on integer sites.
+Here $q_0=1$. For $k=3$, $h(x)=1/2+\min(x,1-x)$ and $H=1$, so (2) holds throughout $0<\lambda<e/2$, including $\lambda=1$. The weighted argument below extends the three-term formulas to $0<\lambda<e/1.563804$. The [all-length comparison](RothEffectiveLength.md) gives order estimates for every $\lambda$; this note identifies an actual limit in (2). The local optimization argument follows the general idea of analyzing increments on tree neighborhoods. For related results for sparse random graphs see [Gamarnik, Nowicki and Świrszcz](https://arxiv.org/abs/math/0309441). The edges here come from arithmetic relations on integer sites.
 
 ## The rooted arithmetic neighborhood
 
@@ -65,6 +65,28 @@ The last step uses $u e^{-u}\le1/e$. Differentiation is legitimate on bounded fu
 
 For finite $n$, differentiation of the Bernoulli expectation is the sum over sites of these expected add-one gains, by expanding the product measure in each coordinate. Integrate from retention zero to $p$. At retention $tp$, for fixed $t>0$, the intensity parameter is $\lambda t^{k-1}$ and the same argument applies. Gains are bounded by one, so dominated convergence gives (4) for the normalized expectation. The exposure martingale for the maximum has conditional variance per site at most $p(1-p)$, since the conditional score changes by at most one when that site changes. Thus the normalized variance is at most $1/(np)$, proving the asserted convergence. Coupling to a uniform sample of $\lfloor np\rfloor$ by a random permutation costs at most the difference of sample sizes, of expectation $O(\sqrt{np}+1)$.
 
+## A larger uniqueness interval from the spatial types
+
+The independent verifier of this project suggested keeping the individual perturbations in the contraction estimate. In the square-root logarithmic variable let $\Phi$ denote the update. Write $L$ for the positive operator that sums the integrals of the individual child values over every allowed edge through the parent. Cauchy–Schwarz in the step variable, then in the finite child list, gives
+$$
+ |D\Phi(g)h(x)|^2\le \lambda\int e^{-\sum_jg_j^2}(\sum_jg_jh_j)^2\,d\nu_x
+       \le (\lambda/e) L(|h|^2)(x).
+$$
+Indeed $(\sum_jg_jh_j)^2\le(\sum_jg_j^2)(\sum_j h_j^2)$. For any positive continuous $w$ with $Lw\le\kappa w$, the map contracts in $\sup_x |h(x)|/\sqrt{w(x)}$ whenever $\lambda\kappa<e$. This norm is equivalent to the ordinary supremum norm and all boundary and differentiation arguments above apply.
+
+For three terms, integration over the endpoint and midpoint roles yields
+$$
+ Lw(x)=\tfrac12\int_0^1w + \int_{x/2}^{(1+x)/2}w
+      + \int_{\max(0,2x-1)}^{\min(2x,1)}w .
+$$
+The verifier's explicit first choice $w=1/2+\min(x,1-x)$ gives $Lw\le13w/8$. On $[0,1/4]$ its image is $(3+5x+7x^2)/4$, and on $[1/4,1/2]$ it is $(2+13x-9x^2)/4$, with the rest given by reflection. In the first half-cell the slack is concave and positive at both endpoints. In the second it is $(36x^2-26x+5)/16>0$.
+
+[An exact rational certificate](check_roth_weighted_contraction.py) gives a positive piecewise linear $w$ on 128 equal cells with
+$$
+             1.563684\,w\le Lw\le 1.563804\,w .
+$$
+It constructs the integer nodes by sixteen normalized iterations, with rounding used only to select a witness. On each of 256 half-cells the integral formula for $Lw$ is exactly quadratic. A quadratic with endpoint values $a,c$ and midpoint value $b$ has Bernstein coefficients $a,2b-(a+c)/2,c$. A linear denominator has Bernstein coefficients equal to its values at the two endpoints and midpoint. The ratios of corresponding coefficients, bounded by rational arithmetic on all half-cells, enclose the function ratio throughout. Thus (3), (4) and (7) hold throughout $0<\lambda<e/1.563804$, in particular at $\lambda=1.738$. Also every positive continuous weight $z$ with $Lz\le\kappa z$ has $\kappa\ge1.563684$. Indeed $w\le C z$ and iteration bounds $1.563684^m w\le L^m w\le C\kappa^m z$. This last lower bound concerns this sufficient contraction test only.
+
 ## Evaluating the limit at one intensity
 
 Let $A(\lambda)=\int q_\lambda(x)\,dx$ and
@@ -91,4 +113,4 @@ As a check at low intensity, $q_\lambda=1-\lambda h+O_k(\lambda^2)$ uniformly by
 
 Round each exponential outward using $(1-x/m)^m\le e^{-x}\le(1+x/m)^{-m}$ with $m=16384$, repeated squaring, and internal denominator $10^{12}$. Intersect with the previous enclosure. The integrand in (7) is increasing in $q$ on $(0,1]$. For its logarithm use the positive series $-\log q=2\sum_{j\ge0}t^{2j+1}/(2j+1)$, $t=(1-q)/(1+q)$, with an outward geometric remainder. The code verifies $t^2\le1/2$ for the inputs to this calculation. All products involving the finer denominator are evaluated in signed 128-bit integers; the largest one, in the exponential reciprocal, is below $10^{33}$. The output is the interval in (1), in millionths. Build with a C++17 compiler supporting this integer type.
 
-[Five finite Lean lemmas](RothCriticalLimit.lean) verify the least child-omission cost for an edge, the zero-or-one root rule from edge penalties, the sharp pointwise contraction integrand bound, the cancellation in (6), and the three-term anchor bound. [A separate finite checker](check_roth_tree_gain.py) compares the message recursion with exhaustive optima at fixed boundary assignments. The convergence of the arithmetic neighborhood, the continuum contraction and the passage to the limit have written proofs. The estimate above the uniqueness range, including the behavior needed to determine the large-$b$ density in [the deterministic comparison](RothEffectiveLength.md), remains open.
+[Six finite Lean lemmas](RothCriticalLimit.lean) verify the least child-omission cost for an edge, the zero-or-one root rule from edge penalties, the two pointwise contraction integrand bounds, the cancellation in (6), and the three-term anchor bound. [A separate finite checker](check_roth_tree_gain.py) compares the message recursion with exhaustive optima at fixed boundary assignments. The convergence of the arithmetic neighborhood, the continuum contraction and the passage to the limit have written proofs. The estimate above the uniqueness range, including the behavior needed to determine the large-$b$ density in [the deterministic comparison](RothEffectiveLength.md), remains open.
