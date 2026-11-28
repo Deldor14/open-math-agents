@@ -55,3 +55,29 @@ theorem slope_growth (f : ℤ → ℝ) (k : ℕ)
   exact total k le_rfl
 
 end FibreBarrier
+
+namespace FibreBarrier
+
+/-- If either top endpoint maximizes its fibre, both top certificates
+    yield a discrete convexity certificate for the moving maximum. -/
+theorem envelope_step {a b c d left right fee : ℝ}
+    (hf : 0 < fee) (ha : a+fee ≤ max (max a b) (max c d))
+    (hb : b+fee ≤ max (max a b) (max c d))
+    (hc : 2*c+fee ≤ left+right) (hd : 2*d+fee ≤ left+right) :
+    fee ≤ left+right-2*max (max a b) (max c d) := by
+  have hlow : max a b + fee ≤ max (max a b) (max c d) := by
+    rcases le_total a b with h | h
+    · rwa [max_eq_right h] at hb ⊢
+    · rwa [max_eq_left h] at ha ⊢
+  have hlt : max a b < max c d := by
+    by_contra! h
+    rw [max_eq_left h] at hlow
+    linarith
+  rw [max_eq_right hlt.le]
+  rcases le_total c d with h | h
+  · rw [max_eq_right h]
+    linarith
+  · rw [max_eq_left h]
+    linarith
+
+end FibreBarrier
