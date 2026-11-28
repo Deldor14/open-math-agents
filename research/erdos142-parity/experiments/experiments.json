@@ -1,0 +1,156 @@
+{
+  "short_stride_hitting_sets": [
+    {
+      "p": 7,
+      "cap": 5,
+      "holes": [
+        6,
+        13,
+        20,
+        21,
+        27,
+        29,
+        34,
+        39
+      ]
+    },
+    {
+      "p": 7,
+      "cap": 4,
+      "holes": [
+        6,
+        13,
+        20,
+        22,
+        27,
+        29,
+        36,
+        43
+      ]
+    },
+    {
+      "p": 11,
+      "cap": 9,
+      "holes": [
+        11,
+        22,
+        33,
+        44,
+        55,
+        66,
+        70,
+        77,
+        88,
+        92,
+        99,
+        103
+      ]
+    }
+  ],
+  "reflection_symmetric_94_point_sets_hex": [
+    "ef3e7dc845bdef60def7b06f7bda213be7cf7",
+    "e77cf9cc45bdef60def7b06f7bda2339f3ee7",
+    "e776f9cc45bdef60def7b06f7bda2339f6ee7",
+    "e75ef9cc45bdef60def7b06f7bda2339f7ae7",
+    "d7af7b9436bdef131ef78c8f7bd6c29def5eb",
+    "c7af7b9c36bdef131ef78c8f7bd6c39def5e3",
+    "d7bc79d4e3b5eb71daf5b8ed7adc72b9e3deb",
+    "f6bd71d4e3b5eb71daf5b8ed7adc72b8ebd6f",
+    "f7bc71d4e3b5eb71daf5b8ed7adc72b8e3def",
+    "d6bd7b94e3b5eb71daf5b8ed7adc729debd6b",
+    "f7ad7b8477b5eb71caf538ed7adee21deb5ef",
+    "ddef7b9037bded3296f694cb7bdec09def7bb",
+    "debd7b94e3b5eb71d2f4b8ed7adc729debd7b",
+    "c76f7b9c55bdef229ef7944f7bdaa39def6e3",
+    "e76f799cd5bce7629ef7946e73dab399ef6e7",
+    "e6f731de95b9e76adcf3b56e79da97b8cef67",
+    "dee77b90b79dec7ac6f635e37b9ed09dee77b",
+    "cf6f7b9855bdef229ef7944f7bdaa19def6f3",
+    "def70b9e95bccf6ade67b56f33da979d0ef7b",
+    "c6f73b9e95bccf6ade67b56f33da979dcef63",
+    "cef73b9a95bccf6ade67b56f33da959dcef73",
+    "fbde41de95bccf6ade67b56f33da97b827bdf",
+    "ef6f7998d5bce7629ef7946e73dab199ef6f7",
+    "e7de3bdc95bce7629ef7946e73da93bdc7be7",
+    "f7ad7b8477b5eb719af598ed7adee21deb5ef",
+    "eb7b79c877aded7196f698eb7b5ee139eded7",
+    "ef7a79c877aded7196f698eb7b5ee139e5ef7",
+    "ef7b798877aded7196f698eb7b5ee119edef7",
+    "ef7b798877aded3396f69ccb7b5ee119edef7",
+    "cf6b7b9877aded3396f69ccb7b5ee19ded6f3",
+    "ed7b7b8877adec79c6f639e37b5ee11dedeb7",
+    "fbce7dc0b7bccd7ad666b5eb33ded03be73df",
+    "d7ad7b9477b5eb339af59ccd7adee29deb5eb",
+    "f7ad7b8477b5eb339af59ccd7adee21deb5ef",
+    "ddef7b9057bdeb331af58ccd7bdea09def7bb",
+    "ef7b798877ade57396f69cea7b5ee119edef7",
+    "d7af7b9476b5eb339af59ccd7ad6e29def5eb"
+  ],
+  "solver_only_stride_search": [
+    {
+      "p": 7,
+      "cap": 3,
+      "status": "UNSAT without archived trace"
+    },
+    {
+      "p": 11,
+      "cap": 8,
+      "status": "UNSAT without archived trace"
+    },
+    {
+      "p": 13,
+      "cap": 11,
+      "status": "UNSAT without archived trace"
+    },
+    {
+      "p": 17,
+      "cap": 15,
+      "status": "UNSAT without archived trace"
+    },
+    {
+      "p": 19,
+      "cap": 17,
+      "status": "undecided"
+    },
+    {
+      "p": 19,
+      "cap": 16,
+      "status": "undecided"
+    },
+    {
+      "p": 19,
+      "cap": 10,
+      "status": "UNSAT without archived trace"
+    },
+    {
+      "p": 23,
+      "cap": 21,
+      "status": "undecided"
+    },
+    {
+      "p": 23,
+      "cap": 20,
+      "status": "undecided"
+    },
+    {
+      "p": 23,
+      "cap": 12,
+      "status": "UNSAT without archived trace"
+    },
+    {
+      "p": 29,
+      "cap": 27,
+      "status": "undecided"
+    },
+    {
+      "p": 29,
+      "cap": 26,
+      "status": "undecided"
+    },
+    {
+      "p": 29,
+      "cap": 15,
+      "status": "UNSAT without archived trace"
+    }
+  ]
+}

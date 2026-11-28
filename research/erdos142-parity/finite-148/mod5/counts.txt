@@ -1,0 +1,12 @@
+n 148 target 96 indexed_class 0 occupancy 4 profiles 1 tuples 4624 passed_singleton_filter 0 found 0
+n 148 target 96 indexed_class 1 occupancy 4 profiles 1 tuples 4624 passed_singleton_filter 0 found 0
+n 148 target 96 indexed_class 3 occupancy 4 profiles 1 tuples 78608 passed_singleton_filter 0 found 0
+n 148 target 96 indexed_class 0 occupancy 5 profiles 4 tuples 2510560 passed_singleton_filter 0 found 0
+n 148 target 96 indexed_class 1 occupancy 5 profiles 4 tuples 2510560 passed_singleton_filter 0 found 0
+n 148 target 96 indexed_class 3 occupancy 5 profiles 4 tuples 39572192 passed_singleton_filter 0 found 0
+n 148 target 96 indexed_class 0 occupancy 6 profiles 10 tuples 595709992 passed_singleton_filter 1 found 0
+n 148 target 96 indexed_class 1 occupancy 6 profiles 10 tuples 595709992 passed_singleton_filter 0 found 0
+n 148 target 96 indexed_class 3 occupancy 6 profiles 10 tuples 8635492448 passed_singleton_filter 0 found 0
+n 148 target 96 indexed_class 0 occupancy 7 profiles 20 tuples 81629936016 passed_singleton_filter 1 found 0
+n 148 target 96 indexed_class 1 occupancy 7 profiles 20 tuples 81629936016 passed_singleton_filter 0 found 0
+n 148 target 96 indexed_class 3 occupancy 7 profiles 20 tuples 1078586892020 passed_singleton_filter 0 found 0

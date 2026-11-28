@@ -1,0 +1,72 @@
+[
+  {
+    "p": 11,
+    "n": 113,
+    "r": 100,
+    "variables": 4737,
+    "clauses": 21797,
+    "cnf_sha256": "bbfcc56180df026cd972d7ef570e4beac23c12408df6701a4f321902bb569ca1",
+    "drat_sha256": "a1a27324782979b4ae2ede55c09f39b9311b2d26bdf9b90a1a9be90e5bdf7515",
+    "compressed_sha256": "40d91453ee7560f2e5549e3d8e91a34219acf5eba065c49bf4d0bac7e35dd364"
+  },
+  {
+    "p": 13,
+    "n": 159,
+    "r": 144,
+    "variables": 8309,
+    "clauses": 38726,
+    "cnf_sha256": "a844df66dea3bff1c10fd78860b787c1a3d8340aad7d83c782e8e9ec3d50efd5",
+    "drat_sha256": "2d94dbd0c572fecc4ac77d4538cfda43e88f8dba46624fb8db12d01d6a2255c6",
+    "compressed_sha256": "5ed868bce51454c2910d3dabc5ef6b1f331b4ac08e1d62634c8a19fa546afa94"
+  },
+  {
+    "p": 17,
+    "n": 275,
+    "r": 256,
+    "variables": 22307,
+    "clauses": 106034,
+    "cnf_sha256": "d6b7cb2de7cce86c4c382c956fdaca94816ada1718d1974a23b7c4720741d0e2",
+    "drat_sha256": "8edf7044d6423b7c43933515bab785ebdcab963d5fd988a8ed395add2a022cbb",
+    "compressed_sha256": "0551f0aa1530adb5269f93ba8e5309b23714dbce812102d8bad45f406d279bb4"
+  },
+  {
+    "p": 19,
+    "n": 345,
+    "r": 324,
+    "variables": 33480,
+    "clauses": 160243,
+    "cnf_sha256": "9a4ba4a8ff8f3a470bdea397a5d063b75867806bb7596eda7de66e83eb3f80c4",
+    "drat_sha256": "769430acebff165b3d0e137be8fe139c16171e81b656a85565ee6c04dc06bc47",
+    "compressed_sha256": "0e00af54b1abdffd438b2225b259ded31c6c97db0858a8cccc4c485c6061e1e9"
+  },
+  {
+    "p": 23,
+    "n": 509,
+    "r": 484,
+    "variables": 69035,
+    "clauses": 333838,
+    "cnf_sha256": "0f05387539ce82ea5667211393f45b7fd3fad8e7a4ef080909bf3e19f291e8c3",
+    "drat_sha256": "726c47b497ca09c777c7a6aeb57850119c458874587d7c4f0d3f14b1739fff06",
+    "compressed_sha256": "380ba26bd2c9089ac83652de7d31a4b74a0e1ab15ef9b0b079113c81af07aff4"
+  },
+  {
+    "p": 29,
+    "n": 815,
+    "r": 784,
+    "variables": 160307,
+    "clauses": 777728,
+    "cnf_sha256": "fde1e29fb37513baf0600d8d665dff21fdd6325a6efe8e5eabb0463395262cf2",
+    "drat_sha256": "a686a573463d2b0d39ddf96bb1ae0d55739c5f4b4d3144367f12c0d09e284501",
+    "compressed_sha256": "829ab5e982231aff0d81f901f531215d00900969292dc78d3b3e3a22b8557627"
+  },
+  {
+    "p": 31,
+    "n": 933,
+    "r": 900,
+    "variables": 201553,
+    "clauses": 974966,
+    "cnf_sha256": "1d2163447f54b18ce3e4639d89b7e39d74f3b0a18fc5596d8fbe6c1ddb68bc4c",
+    "drat_sha256": "75240d9a545f3a5d95a79625e1f171d68e4a20b302ff87e93c371baf97c81f32",
+    "compressed_sha256": "ab3d495cbd401b5a3f80cbed2755b39fc4b74a13504cc4a60738cbe7606b525f"
+  }
+]

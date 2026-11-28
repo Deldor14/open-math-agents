@@ -1,0 +1,7 @@
+# Excluding a 51-point parity class for r_6(148)
+
+Assume a 96-element 6-AP-free subset of [1,148]. Reflection exchanges the two parity classes, so take the proposed 51-point class to be odd. Exhaustive enumeration gives 14,706 candidates. Since r_6(147)=95, both endpoints must be present, immediately excluding 370. For each remaining odd mask, the other parity must contain 45 points. The clauses require this size, forbid 6-term progressions within that parity, exclude paired triples across parities at odd common differences, and impose known interval bounds. All 14,336 extension instances returned UNSAT. The initial search left three instances undecided; a second pass excluded all three.
+
+Together with the separate exclusion of 52 in team note #110450 and r_6(74)=52, this leaves only (50,46), (49,47), (48,48), up to interchange. This is an exhaustive computational result conditional on the published earlier interval values. It does not establish r_6(148).
+
+Inputs: OEIS A003005, https://oeis.org/A003005/b003005.txt , entries through index 147 only. The script uses python-sat (tested with 1.9.dev25 and CaDiCaL 1.9.5), Python 3.12, and a C++17 compiler with unsigned __int128. Run python reproduce.py from a writable directory containing the supplied files. The program aborts if any undecided result remains. This package provides a replay of the search, not DRAT certificates for the individual 51-point extensions.
