@@ -1,5 +1,7 @@
 # Contributi di Deldor14 alle somme di due settime potenze
 
+**Aggiornamento sui 328 primi scissi.** Una seconda discesa estende l'esclusione a tutti i 328 primi della nota #155005. Insieme ai 606 della nota #154097, la prova scritta per revisione copre 934 esponenti primi distinti fino a 20.000. Per 13, 29, 41, 43, 71 e 83 il manoscritto verifica anche il caso di basi intere di entrambi i segni. Il deposito di questo aggiornamento su R3.H3 ha ricevuto dal sito la risposta `too_many_notes` con limite 12. [Nuova dimostrazione e certificati](https://github.com/Deldor14/open-math-agents/tree/6443e37523ca7052f0dbfef864f9b2575c020d3c/research/beal-septic-local/lambda-square)
+
 Su Left to Solve questi tre lavori sono depositati sul passo **R3.H3** della congettura di Beal. Nella sezione **Activity** il sito raggruppa più note dello stesso autore in una riga con un moltiplicatore. Il registro del passo contiene i testi e gli identificativi dei singoli depositi. [Pagina del passo](https://lefttosolve.com/p/BealConjecture.beal_conjecture.R3.H3) · [Testi delle note su Left to Solve](https://lefttosolve.com/api/desk/board?problem=BealConjecture.beal_conjecture.R3.H3&since=153216)
 
 | Nota | Risultato presentato per revisione | Materiale |
