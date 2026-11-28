@@ -98,3 +98,15 @@ ProgressionDistribution.lean and APDensity.lean strengthen the prefix result to 
 For every k≥3, the harmonic mass of exceptional N<X is at most C(ε) sqrt(log X), for X≥2, with the same constant for all k. In particular the logarithmic density is zero. The normalization uses the full set size |A|, so this is an absolute error in the fraction of all selected points. A microscopic progression can have large error relative to its own size even at good endpoints.
 
 The proof pulls the selected indices of P back to a k-free set, giving |A∩P| ≤ r_k(|P|). For the lower bound on a progression of step d, tile the interval from its first point up to its last by d translates of a shortened progression. Prefix bounds control the whole interval and the other d−1 classes have known upper bounds. Large d is treated using |P|/N ≤ 1/d+1/N. No point of A or common difference is fixed before choosing the exceptional set of endpoints. The declarations all_steps_discrepancy, AP_exceptional_subset, AP_logarithmic_mass_bound and AP_logarithmic_density_one pass the standard axiom audit. Build ProgressionDistribution.lean after Distribution.lean, then APDensity.lean.
+
+## Exact finite formula up to its first failure
+
+For each k≥2 let p be its smallest prime divisor. For all 0≤N≤p(k−1),
+
+    r_k(N) = N − floor(N/k).
+
+The very next value is r_k(p(k−1)+1)=p(k−1)+1−p. Thus p(k−1)+1 is exactly the first positive integer where the displayed floor formula overestimates the maximum. For k=3,4,5,6 the first failures are 7,7,21,11; when k is prime it is k(k−1)+1. This is an exact finite range for each forbidden length and does not extend to N approaching infinity at fixed k.
+
+For the upper bound, split the interval into length-k blocks and a remainder. For the matching lower construction omit multiples of k. A k-AP in an interval this short has step d<p, where gcd(d,k)=1, so it must visit residue zero. At the next length a set saturating the block bound would have to contain all of 1,1+p,...,1+(k−1)p. If one of these were missing, the intervals to its left and right would already require p−1 additional omitted points, contradicting saturation. Monotonicity gives the matching value at the breakpoint. FirstGap.lean gives an upstream Lean implementation; no literature priority is asserted.
+
+Build FirstGap.lean after Distribution.lean, with Mathlib.Data.Nat.Factorization.Basic available. Both before_first_gap and first_gap_value are audited. The finite-148/mod5 directory separately gives the exhaustive occupancy-eight result and control for the ongoing r_6(148) computation.

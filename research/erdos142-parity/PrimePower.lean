@@ -5,7 +5,7 @@ import Mathlib.Data.Nat.Prime.Basic
 
 namespace ProgressionParity
 
-private lemma hits_residue {m d : ℕ} (hm : 0 < m) (co : m.Coprime d)
+lemma hits_residue {m d : ℕ} (hm : 0 < m) (co : m.Coprime d)
     (a r : ℕ) (hr : r < m) : ∃ i < m, (a+i*d)%m=r := by
   let f : Fin m → Fin m := fun i => ⟨(a+i.val*d)%m, Nat.mod_lt _ hm⟩
   have inj : Function.Injective f := by

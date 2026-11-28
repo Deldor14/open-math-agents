@@ -5,7 +5,7 @@ open Set.IsAPOfLengthFree
 open scoped BigOperators
 open Filter Topology
 
-private lemma portion_bounds {k N : ℕ} (hk : 3≤k) (A : Finset ℕ)
+lemma portion_bounds {k N : ℕ} (hk : 1<k) (A : Finset ℕ)
     (sub : A ⊆ Finset.Icc 1 N) (fre : Free (· ∈ A) k) {x : ℕ} (hx : x≤N) :
     (A.filter (·≤x)).card ≤ maxCard k x ∧ A.card-(A.filter (·≤x)).card ≤ maxCard k (N-x) := by
   let L := A.filter (·≤x)
@@ -59,7 +59,7 @@ theorem prefix_discrepancy {k N : ℕ} (hk : 3≤k) (hn : 0<N) {ε:ℝ} (good : 
   have np : 0<(N:ℝ) := by exact_mod_cast hn
   have ok {y:ℕ} (hy : y≤N) : (maxCard k y:ℝ)/R-(y:ℝ)/N ≤ ε :=
     (abs_le.mp (le_of_not_gt (fun h => good ⟨y,hy,h⟩))).2
-  obtain ⟨lc,hc⟩ := portion_bounds hk A sub fre hx
+  obtain ⟨lc,hc⟩ := portion_bounds (by omega : 1<k) A sub fre hx
   have part := Finset.card_filter_le A (·≤x)
   have cap := bound_witness (by omega : 1<k) A sub fre
   have leR : (A.card:ℝ)/R≤1 := (div_le_one rp).mpr (by dsimp [R]; exact_mod_cast cap)
