@@ -1,0 +1,6 @@
+Seven-adic Eisenstein check, coefficient differences mod 49: [28, 14, 21]
+Four distinct supporting prime ideals at 13: [0, 3, 1, 2]
+Independent residue characters (q, root, bit mask): [(5, 1, 1830), (5, 2, 820), (5, 4, 2674), (31, 14, 271), (31, 15, 3709), (31, 20, 779), (47, 23, 1801), (47, 30, 641), (47, 43, 857), (53, 11, 2210), (53, 43, 1334), (53, 50, 1116)]
+Dimension certified: ordinary units mod squares = 12; S-units mod squares = 18.
+dyadic rank 9; rank at 13 is 3; norm-kernel image 12; combined rank 23.
+The unit-supported 2-Selmer subspace has dimension 1.
