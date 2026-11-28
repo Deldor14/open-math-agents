@@ -1,0 +1,89 @@
+Una separazione di un milione per le basi di una somma di settime potenze
+Deldor14 · 28 novembre 2026 · nota per revisione matematica
+
+Se a e b sono interi positivi coprimi e 1≤|a−b|≤1.000.000, allora a⁷+b⁷
+non è una potenza perfetta di esponente n≥2. Non c'è un limite assoluto
+su a, b o sulla base della presunta potenza perfetta.
+
+Si usano la discesa e la stima della nota ConsecutiveSeventhPowers.txt,
+compreso il contributo della chat sulle quinte potenze. L'argomento
+seguente estende il passaggio aritmetico finale a tutte le distanze
+indicate. Si tratta del caso di due settime potenze nella congettura di
+Beal. La dimostrazione è scritta, con due verifiche computazionali indipendenti.
+
+1. Riduzione. Basta trattare un primo p divisore di n. Per p=2,3 si usa
+Darmon–Merel (con la modularità per il caso cubico), per p=5 si usa il
+teorema incondizionato di Dahmen–Siksek per la firma (7,7,5), e per p=7
+il teorema di Fermat. Sia dunque p≥11. Scriviamo h=|a−b| e H=10⁶.
+Per BCDF 1.4(1), le basi hanno parità opposta e 7 non divide D=a+b.
+Segue che h è dispari, gcd(min(a,b),h)=1, D=uᵖ, c=uv e gcd(u,v)=1,
+dove a⁷+b⁷=cᵖ e u≥3 è dispari. La stima ciclotomica dà u<12ph.
+
+2. Limite sull'esponente. Il corollario 2.4 di Pintér si applica con
+k=7, passo dispari h e divisore unitario D₇(a+b)=1. Ponendo H₀=6 log 2 e
+M(p)=max(log(p/H₀+1/(6 log 3))+0,38,10), la stima è
+
+    p < 12,6·6H₀ M(p)² + log(21h²)/(2 log 3).
+
+Se p≥275184, si ha 4<H₀<5, M(p)≤log p e l'ultimo termine è <20.
+Quindi p<378(log p)²+20. Questo è impossibile: p/(log p)² è crescente
+per p>e² e 275184>378·13²+20, con log(275184)<13. Equivalentemente
+(p−20)/(log p)² è crescente per p≥275184, come si vede derivando.
+Sono sufficienti i 24.050 primi compresi tra 11 e 275184.
+
+3. Controllo per un intero intervallo di distanze. Per la formula binomiale,
+
+    64vᵖ = D⁶ + 21D⁴h² + 35D²h⁴ + 7h⁶.
+
+Siano α=2^(−6/p) e r=v/u⁶ in termini ridotti. Dato che h<D, la concavità
+della radice p-esima, come nella nota sul caso consecutivo, dà
+
+    0 < r−α < 63H²/(p u^(2p)).
+
+Per u≥23 questo è <1/(4u¹²), come segue da 252H²<11·23¹⁰. Il ruolo
+aritmetico delle radici inferiori a 23 era stato individuato nel lavoro
+parallelo sulle settime potenze. Qui le sottoponiamo anche a un controllo
+diretto, in modo da poter riprodurre autonomamente il certificato.
+
+4. Primo verificatore. verify_nearby.py costruisce una frazione Z/S con
+S=2⁶⁴⁰ e |α−Z/S|<300/S, usando 225 termini per log 2 e 128 per
+l'esponenziale. La prova dell'errore è quella della nota precedente:
+129!>S, ogni termine scalato porta meno di 2 unità di arrotondamento;
+la stima 300 copre anche l'errore iniziale e il resto di Taylor.
+Poiché 4·300(12pH)¹²<S, ogni r con u≥23 deve essere un convergente di
+Z/S. Per tutti gli esponenti insieme ci sono 3.214.859 convergenti entro i
+limiti e nessuno ha denominatore sesta potenza di un dispari u≥23.
+Per u<23 il programma delimita direttamente v usando la precedente
+disuguaglianza e v≤u⁶. Restano 317 terne (u,v,p), per cui si verifica
+l'assenza di una distanza ammessa mediante ricerca binaria nel polinomio
+strettamente crescente in h. Il controllo permette tutto l'intervallo
+1≤h≤H simultaneamente, inclusi i casi h vicino a D.
+
+5. Secondo verificatore. verify_nearby_interval.py usa invece S=2⁷⁰⁴.
+Una stima decimale suggerisce gli estremi per α: le disuguaglianze di
+ordine sono certificate con potenze intere dirette. Per ogni intervallo
+U≤u≤V si allarga l'estremo superiore per includere 63H²/(p·U^(2p)).
+Usare min(p,260) nell'esponente rende l'intervallo solo più grande.
+Se la lunghezza dell'intervallo per r è inferiore a 1/(V⁶)², può contenere
+al più una frazione ridotta con denominatore ≤V⁶: si testa la frazione
+di minimo denominatore. Altrimenti si divide l'intervallo per u. Per un
+singolo u si elencano direttamente tutti i numeratori possibili. Nei casi
+residui il programma verifica l'equazione originale sulle basi (D−h)/2
+e (D+h)/2. Complessivamente considera 24.252 intervalli e ritrova 317
+casi da controllare, con zero soluzioni primitive.
+
+Conservare nella stessa cartella i quattro script verify_*.py ed eseguire
+
+    python3 verify_nearby.py
+    python3 verify_nearby_interval.py
+
+I due percorsi usano solo Python 3 con le asserzioni abilitate. Due lemmi
+Lean separati verificano l'identità binomiale e la stima della somma
+geometrica usata nella discesa. La prova complessiva e i teoremi citati
+sono esposti su carta e offerti alla revisione. Non si rivendica priorità.
+
+Fonti
+https://arxiv.org/html/2611.29398v1 (Pintér, corollario 2.4, preprint)
+https://arxiv.org/html/2308.07062v2 (BCDF, teorema 1.4(1))
+https://doi.org/10.4064/aa164-1-5 (Dahmen–Siksek, grado cinque nell'uscita)
+https://www.math.mcgill.ca/darmon/pub/Articles/Research/18.Merel/paper.pdf
