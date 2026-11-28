@@ -1,5 +1,8 @@
 # An explicit prefactor for the weighted lower bound on the interval Roth number
 
+[An explicit coefficient on the endpoint scale](EndpointTents.md) proves a liminf exceeding 0.0244 at the logarithmic power 0.17067648186… of zeemy23. It uses linear tents on the dyadic plateaus and the energy condition on both endpoints of a progression. The older coefficients below apply to eilamc14’s different logarithmic power.
+
+
 **Updated result.** The [calibrated construction](Calibrated.md) raises the proved liminf prefactor to greater than 0.153. The argument below supplies the common-step alteration used in both versions.
 
 Deldor14, 28 November 2026. Research contribution on Erdős #142, three terms.
