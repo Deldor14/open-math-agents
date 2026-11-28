@@ -13,6 +13,8 @@ $$\boxed{\displaystyle
 
 The test class uses an explicit size threshold. It contains every maximizer, by the lower bound $R(n)\ge n\exp(-4\sqrt{\log n})$. For $2^t\le n<2^{t+1}$, monotonicity and $R(2^{t+1})\le 2R(2^t)$ bound the difference between $\log(n/R(n))$ and $D_t$ by $\log2$. Thus $\beta$ is also the liminf exponent of the density deficit on general intervals, using $\log\log n$ as denominator. The currently available bounds give $1/6\le\beta\le1/2$. At those two endpoints the right side of (1) is $1/10$ and $1/2$, respectively. Equation (1) transfers bounds on exponents in either direction. Its proof leaves the value of $\beta$ open. [Behrend bound in mathlib](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Combinatorics/Additive/AP/Three/Behrend.html) · [Raghavan, Theorem 1.1](https://arxiv.org/abs/2603.27045v3)
 
+The continuation proves both the liminf and limsup identities for every fixed progression length and for a family of explicit size thresholds. [Upper and lower density exponents](RothDigitExponentRange.md)
+
 ## Finite inequality and extraction
 
 Choose any $k$ interior cuts $0=j_0<j_1<\cdots<j_k<j_{k+1}=d$. Put $\ell_i=j_i-j_{i-1}$ and write $Y_i$ for the corresponding consecutive blocks, from low to high. Then

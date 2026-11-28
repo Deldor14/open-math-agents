@@ -10,7 +10,7 @@ def count {α β : Type*} [DecidableEq β] (s : Finset α) (f : α → β) (y : 
 noncomputable def fiberLog {α β : Type*} [DecidableEq β] (s : Finset α) (f : α → β) : ℝ :=
   ∑ x ∈ s, Real.log (count s f (f x))
 
-private theorem count_pos {α β : Type*} [DecidableEq β] {s : Finset α} (f : α → β)
+theorem count_pos {α β : Type*} [DecidableEq β] {s : Finset α} (f : α → β)
     {x : α} (hx : x ∈ s) : 0<count s f (f x) := by
   unfold count
   have h : 0<(s.filter (fun y => f y=f x)).card := card_pos.mpr ⟨x,mem_filter.mpr ⟨hx,rfl⟩⟩
@@ -72,7 +72,7 @@ theorem subadditivity {α β γ : Type*} [DecidableEq β] [DecidableEq γ] (s : 
     (s.card:ℝ)*Real.log s.card+∑ x ∈ s, Real.log (count s pair (pair x))
   linarith
 
-private theorem digit_rebuild (x a w : ℕ) :
+theorem digit_rebuild (x a w : ℕ) :
     x%a+a*((x/a)%w)+(a*w)*(x/(a*w))=x := by
   rw [← Nat.div_div_eq_div_mul]
   calc
@@ -114,41 +114,55 @@ theorem outside_count (s : Finset ℕ) (free : ThreeAPFree (↑s : Set ℕ))
 noncomputable def info (s : Finset ℕ) (a : ℕ) : ℝ :=
   s.card*Real.log s.card-fiberLog s (fun x => x%a)-fiberLog s (fun x => x/a)
 
-theorem block_step (s : Finset ℕ) (free : ThreeAPFree (↑s : Set ℕ))
-    {a w : ℕ} (ha : 0<a) (hw : 0<w) :
-    fiberLog s (fun x => x%a) ≤ info s (a*w) + s.card*Real.log (rothNumberNat w) +
+theorem block_step_of_count (s : Finset ℕ) (capacity : ℕ → ℕ)
+    {a w : ℕ} (outside : ∀ r q, count s (fun x => (x%a,x/(a*w))) (r,q) ≤ capacity w) :
+    fiberLog s (fun x => x%a) ≤ info s (a*w) + s.card*Real.log (capacity w) +
       fiberLog s (fun x => x%(a*w)) := by
   let f (x : ℕ) := x%a
   let g (x : ℕ) := x/(a*w)
   have sub := subadditivity s f g
-  have cap : fiberLog s (fun x => (f x,g x)) ≤ s.card*Real.log (rothNumberNat w) := by
+  have cap : fiberLog s (fun x => (f x,g x)) ≤ s.card*Real.log (capacity w) := by
     unfold fiberLog
     have term (x : ℕ) (hx : x ∈ s) := Real.log_le_log (count_pos (fun x => (f x,g x)) hx)
-      (outside_count s free ha hw (f x) (g x))
+      (outside (f x) (g x))
     simpa only [sum_const,nsmul_eq_mul] using sum_le_sum term
   dsimp only [f,g] at sub cap
   unfold info
   linarith
 
+theorem block_step (s : Finset ℕ) (free : ThreeAPFree (↑s : Set ℕ))
+    {a w : ℕ} (ha : 0<a) (hw : 0<w) :
+    fiberLog s (fun x => x%a) ≤ info s (a*w) + s.card*Real.log (rothNumberNat w) +
+      fiberLog s (fun x => x%(a*w)) :=
+  block_step_of_count s rothNumberNat (outside_count s free ha hw)
+
 noncomputable def cutSum (s : Finset ℕ) (a : ℕ) : List ℕ → ℝ
   | [] => 0
   | w::ws => info s (a*w)+cutSum s (a*w) ws
 
-theorem telescope (s : Finset ℕ) (free : ThreeAPFree (↑s : Set ℕ)) (ws : List ℕ)
+theorem telescope_of_count (s : Finset ℕ) (capacity : ℕ → ℕ)
+    (outside : ∀ a w : ℕ, 0<a → 0<w → ∀ r q, count s (fun x => (x%a,x/(a*w))) (r,q) ≤ capacity w) (ws : List ℕ)
     (pos : ∀ w ∈ ws, 0<w) (a : ℕ) (ha : 0<a) :
     fiberLog s (fun x => x%a) ≤ cutSum s a ws +
-      s.card*(ws.map (fun w => Real.log (rothNumberNat w))).sum +
+      s.card*(ws.map (fun w => Real.log (capacity w))).sum +
       fiberLog s (fun x => x%(a*ws.prod)) := by
   induction ws generalizing a with
   | nil => simp [cutSum]
   | cons w ws ih =>
     have hw := pos w (by simp)
     have h := ih (fun y hy => pos y (List.mem_cons_of_mem _ hy)) (a*w) (Nat.mul_pos ha hw)
-    have loc := block_step s free ha hw
+    have loc := block_step_of_count s capacity (outside a w ha hw)
     simp only [cutSum,List.map_cons,List.sum_cons,List.prod_cons,← Nat.mul_assoc]
     linarith
 
-private theorem mod_end (s : Finset ℕ) {n : ℕ} (fit : s ⊆ range n) :
+theorem telescope (s : Finset ℕ) (free : ThreeAPFree (↑s : Set ℕ)) (ws : List ℕ)
+    (pos : ∀ w ∈ ws, 0<w) (a : ℕ) (ha : 0<a) :
+    fiberLog s (fun x => x%a) ≤ cutSum s a ws +
+      s.card*(ws.map (fun w => Real.log (rothNumberNat w))).sum +
+      fiberLog s (fun x => x%(a*ws.prod)) :=
+  telescope_of_count s rothNumberNat (fun _ _ ha hw => outside_count s free ha hw) ws pos a ha
+
+theorem mod_end (s : Finset ℕ) {n : ℕ} (fit : s ⊆ range n) :
     fiberLog s (fun x => x%n)=0 := by
   unfold fiberLog
   apply sum_eq_zero
@@ -166,7 +180,7 @@ private theorem mod_end (s : Finset ℕ) {n : ℕ} (fit : s ⊆ range n) :
       exact mem_filter.mpr ⟨hx,rfl⟩
   simp [count,one]
 
-private theorem log_constant {α β : Type*} [DecidableEq β] (s : Finset α) (f : α → β)
+theorem log_constant {α β : Type*} [DecidableEq β] (s : Finset α) (f : α → β)
     (v : β) (h : ∀ x ∈ s, f x=v) : fiberLog s f=s.card*Real.log s.card := by
   unfold fiberLog
   have val (x : α) (hx : x ∈ s) : count s f (f x)=s.card := by
