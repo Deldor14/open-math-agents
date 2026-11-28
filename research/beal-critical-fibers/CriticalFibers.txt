@@ -1,0 +1,59 @@
+Le classi critiche modulo il quadrato dell'esponente in grado cinque e sette
+Deldor14 · 28 novembre 2026
+
+Supponiamo aᵏ+bᵏ=cᵖ, (a,b)=1, D=a+b=sᵖ, p primo ≥11, k=5 oppure 7.
+Quando p∤D si pone x=a/D in Z/p², cosicché 1−x=b/D. Il valore
+Pₖ(x)=xᵏ+(1−x)ᵏ è una potenza p-esima, (c/sᵏ)ᵖ. La tabella stabilisce
+quali classi critiche x modulo p passano questo test modulo p².
+
+    k      condizione di divisibilità per p        tutti i sollevamenti ammessi se
+    5,7    a−b                                     2^(p−1)≡1 mod p²
+    5      a²+b²                                   2^(p−1)≡1 mod p²
+    7      a²−ab+b²                                3^(p−1)≡1 mod p²
+    7      a²+ab+b²                                sempre
+
+Quando il criterio della terza colonna fallisce, nessun sollevamento della
+classe è ammesso. Tutte le altre classi hanno esattamente un sollevamento.
+Queste sono condizioni necessarie su una soluzione intera. Le classi
+indicate nella tabella hanno automaticamente p∤D: sostituendo a=−b
+modulo p si otterrebbero, rispettivamente, p|2b, p|2b², p|3b² o p|b²,
+tutti impossibili per p≥11 e (a,b)=1.
+
+Dimostrazione. Ogni classe w modulo p ha un'unica potenza p-esima sopra
+di sé modulo p²: il valore wᵖ di un rappresentante qualsiasi. Ciò segue
+dal binomio e dal piccolo teorema di Fermat. In una classe x₀ modulo p,
+poniamo w=Pₖ(x₀). I sollevamenti x=x₀+pj soddisfano
+
+    Pₖ(x) ≡ w + p j Pₖ'(x₀) mod p².
+
+Quando la derivata è invertibile, il solo sollevamento possibile è
+j≡((wᵖ−w)/p)/Pₖ'(x₀) modulo p. Questa formula vale anche per w=0 mod p.
+
+Se la derivata è zero, a e b sono unità e (a/b)^(k−1)=1 modulo p.
+Per k=5 si hanno gli ordini 1,2,4; per k=7 gli ordini 1,2,3,6.
+L'ordine 2 è escluso da a+b invertibile. Gli altri danno proprio le
+quattro righe. In una classe critica tutti i sollevamenti hanno lo stesso
+valore modulo p². Per calcolarlo, scriviamo A=x, B=1−x in Z/p² e
+P=Aᵏ+Bᵏ. Le identità algebriche in Critical.lean mostrano che
+
+    16P=1 per k=5, p|(a−b),        64P=1 per k=7, p|(a−b),
+     4P=−1 per k=5, p|(a²+b²),    27P=−1 per k=7, p|(a²−ab+b²),
+       P=1 per k=7, p|(a²+ab+b²).
+
+Per esempio 27(A⁷+B⁷)+(A+B)⁷ =
+7(A+B)(4A²+5AB+4B²)(A²−AB+B²)². Il quadrato permette la riduzione
+modulo p² sotto la sola ipotesi di divisibilità per p.
+Una unità t di Z/p² è potenza p-esima se e solo se t^(p−1)=1:
+la necessità segue da Eulero, la sufficienza da t=tᵖ. Il segno è
+irrilevante e gli esponenti 2,3,4,6 sono coprimi con p, perciò le
+condizioni sulle potenze di 2 o 3 equivalgono ai criteri della tabella
+(usare che (t^(p−1))ᵖ=1 per ogni unità t).
+
+Verifiche. Lean 4.33.1 controlla le identità polinomiali, il lemma di
+gruppo e le quattro implicazioni non banali nei rappresentanti normalizzati.
+Il verdetto per le unità e l'esaustività della classificazione seguono
+dall'argomento scritto. Il programma verify_fibers.py confronta il
+criterio con l'enumerazione diretta di tutte le p-esime potenze per i
+primi da 11 a 199: 8.420 classi, di cui 8.216 regolari e 204 critiche.
+Gli altri primi sono coperti dalla prova; i casi con p|D richiedono una
+carta differente.
