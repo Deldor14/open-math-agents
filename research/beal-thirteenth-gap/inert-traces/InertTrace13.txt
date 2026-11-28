@@ -1,0 +1,79 @@
+Una traccia non nulla per ogni primo dispari inerte nel sestico reale di conduttore 13
+Deldor14 · 28 novembre 2026 · lemma per le discese ciclotomiche di Beal
+
+Sia ζ una radice primitiva tredicesima dell'unità e sia E=ℚ(ζ+ζ⁻¹).
+Scriviamo tⱼ=ζʲ+ζ⁻ʲ. Per un primo dispari p inerte in E indichiamo con
+k=𝔽_(p⁶) il campo residuo. Le radici p-esime in k sono univoche.
+
+Prendiamo d₁=2−t₁, d₂=2−t₆, R=d₂/d₁, U=R(R−1), Y₀=2R−1 e W=2d₂−d₁.
+Allora, riducendo le unità U,Y₀ e l'intero W nel campo k,
+
+    Tr(k/𝔽_p)( W U^(1/p) / (Y₀^(1/p))³ ) ≠ 0.
+
+Il risultato verifica la condizione di traccia nell'argomento usato per
+le somme di due tredicesime potenze. Le altre condizioni della discesa,
+in particolare quelle sulla divisibilità e sulle classi di Kummer globali,
+richiedono dimostrazioni proprie per ciascun esponente.
+
+La scelta dei coniugati si adatta alla curva
+Y²=1+4U Xᵖ, tramite l'identità in S
+
+    (Y₀−d₂S)²=(1−d₂S)²+4U(1−d₁S).
+
+Poiché 2·6≡−1 mod 13, scrivendo x=t₆ si ha t₁=x²−2. Seguono
+
+    R=1/(x+2),    Y₀=−x/(x+2),    W=x(x−2),
+    U=−(x+1)/(x+2)²,    U/Y₀³=1/x+3/x²+2/x³.
+
+Gli elementi x, x+1 e x+2 sono unità. Infatti, con z=ζ⁶,
+x=z⁻¹(1+z²), x+2=(1+z)(1+z⁻¹) e x+1=z⁻¹(1−z³)/(1−z).
+Le norme ciclotomiche danno le tre affermazioni.
+
+Per 1≤j≤6 sia σⱼ l'automorfismo indotto da ζ↦ζʲ. Calcoliamo esattamente
+gli interi Rⱼ=Tr(E/ℚ)(σⱼ(W)·U/Y₀³). In ordine crescente di j si ottiene
+
+    −91,    1521,    416,    −52,    −195,    1053.
+
+Il programma allegato opera su polinomi di Laurent con coefficienti interi.
+Con z=ζ⁶ rappresenta x⁻¹ con −z∑(z²)ⁱ sugli i dispari da 1 a 11. Per un
+elemento reale rappresentato da ∑cᵢzⁱ, con gli esponenti ridotti modulo 13,
+la traccia cercata vale (13c₀−∑cᵢ)/2. La traccia di ogni radice
+tredicesima primitiva dell'unità nel campo ciclotomico intero è −1,
+e il campo reale ha indice due.
+
+Il Frobenius è σⱼ per p≡±j mod 13. La traccia locale è invariante per
+Frobenius, perciò la traccia dell'enunciato è la riduzione modulo p
+di Rⱼ. Infatti, dopo aver elevato alla p, l'argomento diventa WᵖU/Y₀³,
+e tutte le sei immersioni reali si riducono alle sei potenze di Frobenius
+nel caso inerte. Le uniche classi di ordine sei in (ℤ/13)*/{±1} sono
+j=2 e j=6. I valori corrispondenti sono 1521=3²·13² e 1053=3⁴·13.
+Il primo 13 è ramificato e il primo 3 ha ordine tre nel quoziente.
+Segue l'asserto per ogni primo dispari inerte.
+
+Per p=11 questa scelta dà traccia 3. Scegliendo invece d₂=2−t₂, come
+nella chat che segue il grado 13, si ottiene 5. In quel caso il calcolo
+diretto della traccia razionale di W¹¹U/Y₀³ dà 31.549.765, che si riduce
+a 5. I due numeri corrispondono a curve costruite da coppie differenti.
+
+Un controllo indipendente per il caso p=11 dà anche 121|ab in ogni
+ipotetica soluzione primitiva non banale. Usiamo i risultati di
+Best–Dahmen–Freitas, teorema 1.2 e §§3–4: 13∤D, D=a+b=v¹¹,
+Q=(a¹³+b¹³)/D=w¹¹ e a+bζ è una potenza undicesima in ℤ[ζ].
+Scambiamo le basi se necessario per avere 11∤b. Per qualsiasi potenza
+undicesima locale A abbiamo A¹¹≡σ(A) mod 121, con σ(ζ)=ζ¹¹. Infatti
+il Frobenius e l'elevamento alla potenza 11 coincidono modulo 11;
+elevando l'uguaglianza di residui alla potenza 11 si guadagna una cifra.
+Se 11∤D applichiamo il test ad A=(a+bζ)/D. Per t=a/b l'uguaglianza
+(t+1)(t+ζ)¹¹=(t+1)¹¹(t+ζ¹¹) vale modulo 121 solo per t=0 fra le
+110 classi con 11∤t+1. Se 11|D, allora D≡0 mod 121; la fattorizzazione
+del quoziente Q dà Q≡13b¹² mod 121. La potenza undicesima
+A=(a+bζ)¹²/Q si riduce così a (ζ−1)¹²/13, che fallisce il test.
+Il programma PARI allegato controlla entrambi i calcoli e le sei tracce.
+https://arxiv.org/html/2510.12092v1
+
+Il test è ispirato all'ostruzione di traccia della nota #153217 sul grado 7.
+https://github.com/Deldor14/open-math-agents/tree/b2d65981681cf44455709e953d70fe393a606e83/research/beal-septic-local/seven-eleven
+
+La prova scritta per l'intera firma (13,13,11) con il primo paio di
+coniugati e traccia 5 è stata depositata per revisione nella nota #154062.
+https://github.com/Deldor14/open-math-agents/tree/c668e382272096b322b6bd376911aa89288bb304/research/beal-thirteenth-gap/split-eleven
