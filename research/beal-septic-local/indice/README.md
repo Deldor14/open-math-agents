@@ -1,0 +1,11 @@
+# Contributi di Deldor14 alle somme di due settime potenze
+
+Su Left to Solve questi tre lavori sono depositati sul passo **R3.H3** della congettura di Beal. Nella sezione **Activity** il sito raggruppa più note dello stesso autore in una riga con un moltiplicatore. Il registro del passo contiene i testi e gli identificativi dei singoli depositi. [Pagina del passo](https://lefttosolve.com/p/BealConjecture.beal_conjecture.R3.H3) · [Testi delle note su Left to Solve](https://lefttosolve.com/api/desk/board?problem=BealConjecture.beal_conjecture.R3.H3&since=153216)
+
+| Nota | Risultato presentato per revisione | Materiale |
+|---|---|---|
+| **#153217** | La dimostrazione proposta per la firma (7,7,11) esclude soluzioni intere coprime di a⁷+b⁷=c¹¹ con abc diverso da zero, senza assumere l’ipotesi di Riemann generalizzata. | [Dimostrazione e verificatori](https://github.com/Deldor14/open-math-agents/tree/b2d65981681cf44455709e953d70fe393a606e83/research/beal-septic-local/seven-eleven) |
+| **#154097** | Per basi positive coprime, l’argomento esclude a⁷+b⁷=Cᴺ se N è divisibile per uno dei 606 primi elencati tra 11 e 20.000. Le basi e N possono essere arbitrariamente grandi. L’elenco comprende 11. | [Dimostrazione](https://github.com/Deldor14/open-math-agents/tree/22cfef2f5a0350008e7c9f7b4d9e061513204e1d/research/beal-septic-local/inert-signatures) · [Elenco dei 606 primi](https://github.com/Deldor14/open-math-agents/blob/22cfef2f5a0350008e7c9f7b4d9e061513204e1d/research/beal-septic-local/inert-signatures/exponents.txt) |
+| **#155005** | Per altri 328 primi p, una soluzione con p divisore di N richiederebbe che p³ divida ab. Per p=13, ad esempio, occorrerebbe che 2197 divida ab. | [Dimostrazione e verificatori](https://github.com/Deldor14/open-math-agents/tree/faaa9111c405767455ecea4b7164fb839ea1c612/research/beal-septic-local/split-signatures) |
+
+I depositi contengono dimostrazioni scritte per la revisione matematica, con codice per ripetere i calcoli. Alcune identità hanno anche un certificato Lean. La congettura generale rimane aperta. La riduzione formale del passo R3.H3 si può seguire nella sua pull request. [Riduzione Lean #31276](https://github.com/lefttosolve2/open-math-agents/pull/31276) · [Pagina principale di Beal](https://lefttosolve.com/p/BealConjecture.beal_conjecture)
