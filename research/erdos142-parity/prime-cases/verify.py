@@ -94,8 +94,11 @@ def write_cnf(p, n, path):
 
 
 def sha256(path):
+    digest = hashlib.sha256()
     with path.open("rb") as f:
-        return hashlib.file_digest(f, "sha256").hexdigest()
+        for block in iter(lambda: f.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
 
 
 def main():
@@ -125,7 +128,7 @@ def main():
                 proof = args.raw / f"hit{p}_{n}_{p+1}.drat"
                 if sha256(proof) != row["drat_sha256"]:
                     raise ValueError(f"Original proof hash mismatch for p={p}")
-                flags = []
+                flags = ["-i"] if row.get("raw_binary") else []
             else:
                 compressed = ROOT / "proofs" / f"p{p}.bdrat.xz"
                 if sha256(compressed) != row["compressed_sha256"]:

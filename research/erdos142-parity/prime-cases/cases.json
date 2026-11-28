@@ -68,5 +68,16 @@
     "cnf_sha256": "1d2163447f54b18ce3e4639d89b7e39d74f3b0a18fc5596d8fbe6c1ddb68bc4c",
     "drat_sha256": "75240d9a545f3a5d95a79625e1f171d68e4a20b302ff87e93c371baf97c81f32",
     "compressed_sha256": "ab3d495cbd401b5a3f80cbed2755b39fc4b74a13504cc4a60738cbe7606b525f"
+  },
+  {
+    "p": 37,
+    "n": 1335,
+    "r": 1296,
+    "variables": 385918,
+    "clauses": 1861798,
+    "cnf_sha256": "38d55e5858215696e10c6581573e4642a48ae2359119b4c17a2b53fbfd6c2a27",
+    "drat_sha256": "403885f74fc06f92833f5871fcd4c2b938c7931e4e19489ab2448f6fc1008b92",
+    "compressed_sha256": "6b9364bce2d75c5f65a075a7556957e2c831e0f45758b7a35d14cb1141896df7",
+    "raw_binary": true
   }
 ]
