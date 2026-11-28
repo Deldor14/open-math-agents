@@ -16,6 +16,8 @@ Deldor14, 28 November 2026. The four local angular alternatives previously used 
 
 [All convex moving lower lifts](MovingConvex.md) removes the nesting condition, including nonlinear motion on the angular circle, with upper support still approaching the terminal semicircle.
 
+[Equality and quantitative lower-profile rigidity](Equality.md) classifies the attaining bases up to the terminal and bounds deviations at area loss Δ.
+
 ## Local characterization
 
 Take a nonempty open interval on each physical half-circle $t>0$ and $t<0$, inside $(-1/2,1/2)$. On each half set $e=2t-\operatorname{sign}(t)/2$. Let the two resulting open intervals be $I=(l,r)$ and $J=(p,d)$. Put $A_0=\min(l,p)$, $B_0=\max(r,d)$. There exists a bounded row height $F$ such that every row torus progression $X+Z=2Y$ obeys
