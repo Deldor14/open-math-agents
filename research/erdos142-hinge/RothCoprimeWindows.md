@@ -9,6 +9,8 @@ $$|A|=(1+o(1))n\delta,\qquad
 \log(n/|A|)\le d+4\sqrt d+O_B(1).\tag{2}$$
 Every progression of $b$ terms and positive step coprime to $B$ contains $(1+O(1/\log n))\delta b$ elements of this same $A$, uniformly in step and initial point. For every length $s\ge b$, the count in each such progression is $\delta s(1+O(1/\log n+b/s))$. Alternatively one may choose $b$ prime in the same bounds, in which case every step apart from multiples of this prime is covered. In particular, the odd-step question determines the original logarithmic density deficit up to relative error tending to zero. The asymptotic equivalent of $r_3(n)$ is still unknown. [Erdős 142](https://www.erdosproblems.com/latex/142)
 
+The dyadic extension covers all steps except the multiples of a chosen, growing power of two and gives the corresponding mass and window bounds. [Beyond odd steps](RothDyadicWindows.md)
+
 ## The finite counting theorem
 
 Choose positive integers $b,T$ with $n\le bT$, a tag set $U\subset[0,\lceil b/2\rceil)$ of size $s$, and a height set $V\subset[0,T)$ of size $m$. Both sets must avoid nonconstant $k$-term progressions. Let $\mathcal F$ be any finite family of $b$-term progressions in $[0,n)$ with step coprime to $b$. Let $H$ be any set of forbidden intersection cardinalities. The following integer test suffices:
