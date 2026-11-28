@@ -38,3 +38,23 @@ Additional file PrimePower.lean proves prime_power_dilation, initial_values and 
     lean -DwarningAsError=true -o PrimePower.olean PrimePower.lean
 
 The dilation and sharpness theorems both report only propext, Classical.choice and Quot.sound.
+
+## Quantitative variation in the interval length
+
+LocalGrowth.lean gives a digit construction with base b ≥ 2m−1 and a finite relative increment estimate. For all k ≥ 3,
+
+    (2m−1)H ≤ N  ⇒  r_3(m) (r_k(N+H) − r_k(N)) ≤ r_k(N).
+
+BehrendModulus.lean bridges the one-based interval to Mathlib's zero-based Roth number and its certified Behrend lower bound. For m,N ≥ 1, the same hypotheses imply
+
+    r_k(N+H)/r_k(N) ≤ 1 + exp(4 sqrt(log m))/m.
+
+The coefficient tends to zero as m tends to infinity. The estimate is uniform in k ≥ 3. The digit proof fills positions b(x−1)+y with x in a k-AP-free set and y in a 3-AP-free set in [1,m]. Three consecutive residues satisfy the midpoint equation modulo b. Their small range makes it an ordinary equality. The three digits must coincide, forcing divisibility of the common difference by b.
+
+RegularScales.lean bounds the number of exceptional geometric scales. For every integer b ≥ 2, length k ≥ 3, 0 < q < 1 and J ≥ 0, the number of exponents j < J with r_k(b^(j+1)) ≤ q b r_k(b^j) is at most
+
+    4 sqrt(J log b)/(-log q).
+
+In particular their fraction tends to zero as J tends to infinity. This is a density-one conclusion on exponents. Subadditivity gives the upper growth factor b at every step, while each slow jump multiplies the best possible final value by another factor of q. The Behrend bound at b^J limits how many such factors are possible. The estimate does not determine the pointwise asymptotic equivalent requested in Erdős #142.
+
+After building PrimePower, build LocalGrowth.lean, BehrendModulus.lean and RegularScales.lean, in that order, with the same Lean flags. The additional Mathlib dependency is Mathlib.Combinatorics.Additive.AP.Three.Behrend. The final declarations relative_increment, explicit_ratio and slow_scale_count passed the axiom audit with propext, Classical.choice and Quot.sound.

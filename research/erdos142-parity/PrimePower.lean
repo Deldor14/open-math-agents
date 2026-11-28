@@ -15,9 +15,9 @@ private lemma hits_residue {m d : ℕ} (hm : 0 < m) (co : m.Coprime d)
   obtain ⟨i,hi⟩ := (Finite.injective_iff_surjective.mp inj) ⟨r,hr⟩
   exact ⟨i.val,i.isLt,congrArg Fin.val hi⟩
 
-private def block (p : ℕ) (u : ℕ × ℕ) := p*(u.1-1)+u.2+1
+def block (p : ℕ) (u : ℕ × ℕ) := p*(u.1-1)+u.2+1
 
-private lemma block_decode {p x j : ℕ} (hp : 0<p) (hx : 0<x) (hj : j<p) :
+lemma block_decode {p x j : ℕ} (hp : 0<p) (hx : 0<x) (hj : j<p) :
     (block p (x,j)-1)/p+1=x ∧ (block p (x,j)-1)%p=j := by
   dsimp [block]
   rw [Nat.mul_add_div hp, Nat.div_eq_of_lt hj, Nat.mul_comm p (x-1), Nat.mul_add_mod_of_lt hj]
