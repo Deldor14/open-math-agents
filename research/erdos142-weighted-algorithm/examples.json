@@ -1,0 +1,118 @@
+[
+  {
+    "N": 10,
+    "m": 1,
+    "q": 13,
+    "method": "small-grid unconditional separation",
+    "direction_primary_and_doubled_angular": [
+      [
+        1,
+        1
+      ]
+    ],
+    "shifts": [
+      [
+        0,
+        12
+      ]
+    ],
+    "minimum_score": -2,
+    "metric_threshold": [
+      1048577,
+      169
+    ],
+    "grid_eligible_sites": 6,
+    "sites": [
+      2
+    ]
+  },
+  {
+    "N": 61,
+    "m": 2,
+    "q": 67,
+    "method": "small-grid unconditional separation",
+    "direction_primary_and_doubled_angular": [
+      [
+        1,
+        1
+      ],
+      [
+        1,
+        1
+      ]
+    ],
+    "shifts": [
+      [
+        0,
+        59
+      ],
+      [
+        64,
+        60
+      ]
+    ],
+    "minimum_score": -14,
+    "metric_threshold": [
+      8388610,
+      4489
+    ],
+    "grid_eligible_sites": 33,
+    "sites": [
+      6
+    ]
+  },
+  {
+    "N": 3,
+    "m": 1,
+    "q": 3001,
+    "method": "weighted mixture certificate",
+    "direction_primary_and_doubled_angular": [
+      [
+        188,
+        920
+      ]
+    ],
+    "shifts": [
+      [
+        1410,
+        2625
+      ]
+    ],
+    "minimum_score": -11,
+    "metric_threshold": [
+      37061716544,
+      9006001
+    ],
+    "grid_eligible_sites": 3,
+    "sites": [
+      1
+    ]
+  },
+  {
+    "N": 25,
+    "m": 1,
+    "q": 16001,
+    "method": "weighted mixture certificate",
+    "direction_primary_and_doubled_angular": [
+      [
+        578,
+        7713
+      ]
+    ],
+    "shifts": [
+      [
+        230,
+        7375
+      ]
+    ],
+    "minimum_score": -11,
+    "metric_threshold": [
+      350371954753,
+      256032001
+    ],
+    "grid_eligible_sites": 11,
+    "sites": [
+      2
+    ]
+  }
+]
