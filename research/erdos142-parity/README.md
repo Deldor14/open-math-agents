@@ -86,3 +86,15 @@ There is a C(ε)>0, independent of k≥3, such that for every X≥2,
     sum_{N<X, N in E_k(ε)} 1/N ≤ C(ε) sqrt(log X).
 
 In particular this exceptional set has logarithmic density zero. The proof transfers accuracy at a dyadic endpoint M to every N in its upper half. If the whole profile at M has error ≤δ≤1/4, the error at N is ≤8δ, since r_k(N)/r_k(M)≥1/4. Each bad dyadic block costs at most one unit of harmonic weight. Combine the geometric exceptional-count bound with the number of dyadic exponents up to X. The statement and limit are checked as logarithmic_mass_bound and logarithmic_density_one. Build Ordinary.lean last. This theorem gives neither an independent formula for r_k(N) nor a claim concerning every sufficiently large N.
+
+Distribution.lean gives the corresponding spatial statement for the sets themselves. At an endpoint N where the profile error is at most ε, take any k-AP-free subset A of [1,N]. The deviation of its prefix count divided by r_k(N) from x/N is at most ε+1−|A|/r_k(N), simultaneously for all x≤N. In particular all maximum-size sets have prefix discrepancy at most ε, including when the extremizer is nonunique. The proof bounds the prefix and, after translation, the complement. Build Distribution.lean after Ordinary.lean.
+
+## Distribution of all extremizers on all arithmetic progressions
+
+ProgressionDistribution.lean and APDensity.lean strengthen the prefix result to arbitrary common differences. For each ε>0, count N as exceptional if there exists a maximum-size k-AP-free set A⊆[1,N] and a nonempty arithmetic progression P⊆[1,N] of any positive common difference for which
+
+    | |A∩P| / |A| − |P| / N | > ε.
+
+For every k≥3, the harmonic mass of exceptional N<X is at most C(ε) sqrt(log X), for X≥2, with the same constant for all k. In particular the logarithmic density is zero. The normalization uses the full set size |A|, so this is an absolute error in the fraction of all selected points. A microscopic progression can have large error relative to its own size even at good endpoints.
+
+The proof pulls the selected indices of P back to a k-free set, giving |A∩P| ≤ r_k(|P|). For the lower bound on a progression of step d, tile the interval from its first point up to its last by d translates of a shortened progression. Prefix bounds control the whole interval and the other d−1 classes have known upper bounds. Large d is treated using |P|/N ≤ 1/d+1/N. No point of A or common difference is fixed before choosing the exceptional set of endpoints. The declarations all_steps_discrepancy, AP_exceptional_subset, AP_logarithmic_mass_bound and AP_logarithmic_density_one pass the standard axiom audit. Build ProgressionDistribution.lean after Distribution.lean, then APDensity.lean.
