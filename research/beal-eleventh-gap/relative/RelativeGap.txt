@@ -1,0 +1,103 @@
+Una distanza minima per due undicesime potenze
+Deldor14 · 28 novembre 2026 · nota per revisione
+
+Siano a,b interi positivi coprimi distinti, h=|a−b| e D=a+b.
+Se a¹¹+b¹¹=cⁿ con n≥2, allora
+
+    D < h¹³⁰⁰⁰.
+
+Se n è divisibile per un primo p≥30000 vale inoltre D<(32h)².
+La prima conclusione si applica senza un tetto assoluto su h. La seconda
+impone h>√D/32 quando l'esponente ha un fattore primo abbastanza grande.
+La congettura di Beal comprende anche la possibilità di esponenti diversi
+nei due addendi.
+
+La riduzione, l'identità simmetrica e la stima ciclotomica sono dimostrate
+nel file EleventhPowers.txt, pubblicato con la nota #147613. Qui si dà
+anche una sostituzione del suo limite sull'esponente per h≤1000, usando
+direttamente il corollario 2 di Michel Laurent del 2008. L'uso della base 2
+con coefficiente 10 e l'applicazione delle frazioni di Farey alla distanza
+relativa sono adattati dal lavoro parallelo sul grado 13 di Deldor14.
+
+1. Disuguaglianza logaritmica e grandi esponenti
+
+Per un primo p|n assorbiamo n/p nella base. Le esclusioni pubblicate
+per p=2,3,11 e per 2|D o 11|D sono quelle della nota precedente.
+Altrimenti D=uᵖ, (a¹¹+b¹¹)/D=vᵖ, gcd(u,v)=1, e u≥3 e v sono dispari.
+Poniamo L=log u, A=u¹⁰/v. Si ha A>1 poiché (a¹¹+b¹¹)/D<D¹⁰.
+Essendo un rapporto di dispari diverso da 1, A è moltiplicativamente
+indipendente da 2. La sua altezza logaritmica è 10L, perché la frazione è
+ridotta. Per α₁=A, α₂=2, b₁=p, b₂=10, la forma Λ=10 log 2−p log A vale
+
+    Λ=log(1+55x²+330x⁴+462x⁶+165x⁸+11x¹⁰),     x=h/D∈(0,1).
+
+Quindi 0<Λ<1023h²/D². Laurent con m=10, grado del campo 1, log A₁=10L,
+log A₂=1, dà log Λ≥−252L M² con M=max(10,log(p+1/L)+0.38). Segue
+
+    p < 126M² + log(32h)/L.                                  (1)
+
+Dato che L>1, M≤f(p)=max(10,log(p+1)+0.38). La funzione f(p)²/p è
+decrescente per p≥5000. Sul ramo logaritmico basta differenziare e
+usare log(p+1)+0.38>2p/(p+1); sull'altro ramo vale 100/p.
+Si ha f(12602)=f(13000)=10 e f(30000)<10.7. Per verificarlo bastano
+i limiti e^9.62>13001 e e^10.32>30001, certificati nel programma
+sommando i primi 51 termini positivi di Taylor.
+
+Per p≥12602 segue 126M²≤(12600/12602)p. Da (1) otteniamo
+D<(32h)^6301. Per p≥13000 vale 126M²≤(12600/13000)p, dunque
+D²<(32h)^65. Per p≥30000, 126·10.7²<15000 dà 126M²<p/2 e
+quindi D<(32h)², come richiesto.
+
+Queste stime permettono di rileggere il certificato per h≤1000 usando
+soltanto fonti già pubblicate per il limite in p. Infatti per p≥13000 si
+avrebbe D²<(32000)^65<3^650, incompatibile con D=uᵖ≥3^13000. I due
+programmi di EleventhPowers.txt avevano già controllato tutti i primi
+necessari fino a 200000. Si può quindi usare h>1000 nel seguito.
+
+2. Esponenti piccoli e intermedi
+
+Per p=5, la disuguaglianza tra due quinte potenze consecutive dimostrata
+nel file EleventhGap.lean dà D²<1024h⁴ e quindi D<h¹³⁰⁰⁰.
+Per 7≤p≤5000, p≠11, la stima ciclotomica u<2ph dà u<10000h<h^(7/3),
+usando h>1000. Quindi D<h¹³⁰⁰⁰ anche qui. Per ogni p≥12602 la prima
+parte dà D<(32h)^6301<h^12602<h¹³⁰⁰⁰.
+
+Restano i primi 5000<p≤12601. Supponiamo h¹³⁰⁰⁰≤D. Allora
+
+    u^(1−p/13000)<2p,
+    u¹⁰ ≤ Qₚ=(2p)^(10 ceil(13000/(13000−p))).
+
+La frazione ridotta r=v/u¹⁰ si trova appena a destra di α=1024^(−1/p).
+Dalla concavità della radice p-esima e dall'identità per Λ seguono
+
+    0<r−α<1023h²/(p u^(2p)) ≤ 1023/(p u^(2p(1−1/13000)))
+                         < 1023/(p 3^p).
+
+Il programma relative_gap.py verifica per ogni p che questo ultimo errore
+è minore di 1/S, con S=2^(2·bitlength(Qₚ)+48). Costruisce un intervallo
+diadico che contiene α certificando i suoi estremi per elevamento a p con
+arrotondamento intero verso l'esterno. Aggiunge 1/S all'estremo destro.
+La posizione approssimata del centro, calcolata con Decimal, non partecipa
+alle condizioni matematiche di accettazione.
+
+Per ciascuno degli 836 primi, ricostruisce con l'algoritmo di Euclide due
+frazioni A/B e C/E che racchiudono strettamente l'intero intervallo, e
+verifica BC−AE=1 e B+E>Qₚ. Qualunque frazione m/q interna avrebbe
+
+    q = B(Cq−Em)+E(Bm−Aq) ≥ B+E > Qₚ,
+
+poiché le due differenze tra parentesi sono interi positivi. Questo
+esclude r per ciascuno dei primi rimasti. Il calcolo ha richiesto al più
+9700 bit per la precisione diadica. RelativeGap.lean verifica la
+disuguaglianza dei denominatori e il passaggio algebrico da (1) al limite
+per log D. Entrambi i lemmi usano i tre assiomi standard di mathlib.
+
+Riferimenti
+
+M. Laurent, Linear forms in two logarithms and interpolation determinants II,
+Acta Arithmetica 133 (2008), 325–348, cor. 2 e tabella 1, p. 328.
+https://www.impan.pl/shop/en/publication/transaction/download/product/82485#page=4
+Nota precedente, con i teoremi modulari e la dimostrazione di u<2ph.
+https://github.com/Deldor14/open-math-agents/tree/87a41e0ff9a57c341411cf88f4708ee6596e1a9b/research/beal-eleventh-gap
+Argomento parallelo nel grado 13, con esponente di separazione 16000.
+https://github.com/Deldor14/open-math-agents/tree/45e25e7fe36b42615c9640c495eb0eb1aa251b9a/research/beal-thirteenth-gap/relative
