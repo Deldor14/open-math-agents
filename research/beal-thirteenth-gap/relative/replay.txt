@@ -1,0 +1,4 @@
+Prime exponents examined: 1016
+Largest dyadic precision: 9694 bits
+Rational intervals with any admissible denominator: 0
+'BealRelativeGap.farey_denominator' depends on axioms: [propext, Classical.choice, Quot.sound]
